@@ -4,14 +4,14 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 const USERS_DATA = [
-  { email: 'alex@folio.app',   username: 'alexchen',  displayName: 'Alex Chen',    color: '#E8A020', bio: 'Reading, watching, and listening my way through life. SF → NYC.', interests: ['book','film'] },
-  { email: 'maya@folio.app',   username: 'mayap',     displayName: 'Maya Patel',   color: '#7A9E7E', bio: 'Design + sci-fi + too much coffee.', interests: ['book','podcast'] },
-  { email: 'jordan@folio.app', username: 'jordank',   displayName: 'Jordan Kim',   color: '#6B8DD6', bio: 'Cinema lover, aspiring critic.', interests: ['film'] },
-  { email: 'sam@folio.app',    username: 'samr',      displayName: 'Sam Rivera',   color: '#C47D5A', bio: 'Game dev by day, bookworm by night.', interests: ['game','book'] },
-  { email: 'priya@folio.app',  username: 'priyan',    displayName: 'Priya Nair',   color: '#9B6DB5', bio: 'Podcast addict. Always listening.', interests: ['podcast','film'] },
-  { email: 'theo@folio.app',   username: 'theow',     displayName: 'Theo Walsh',   color: '#4AADAB', bio: 'Music, film, the occasional novel.', interests: ['film','game'] },
-  { email: 'ines@folio.app',   username: 'inesm',     displayName: 'Ines Moreau',  color: '#E87070', bio: 'Parisienne in Brooklyn. Books and films and wine.', interests: ['book','film'] },
-  { email: 'kai@folio.app',    username: 'kain',      displayName: 'Kai Nakamura', color: '#D4A853', bio: 'Speedrunner and slow reader.', interests: ['game','podcast'] },
+  { email: 'alex@hobbyist.app',   username: 'alexchen',  displayName: 'Alex Chen',    color: '#E8A020', bio: 'Reading, watching, and listening my way through life. SF → NYC.', interests: ['book','film'] },
+  { email: 'maya@hobbyist.app',   username: 'mayap',     displayName: 'Maya Patel',   color: '#7A9E7E', bio: 'Design + sci-fi + too much coffee.', interests: ['book','podcast'] },
+  { email: 'jordan@hobbyist.app', username: 'jordank',   displayName: 'Jordan Kim',   color: '#6B8DD6', bio: 'Cinema lover, aspiring critic.', interests: ['film'] },
+  { email: 'sam@hobbyist.app',    username: 'samr',      displayName: 'Sam Rivera',   color: '#C47D5A', bio: 'Game dev by day, bookworm by night.', interests: ['game','book'] },
+  { email: 'priya@hobbyist.app',  username: 'priyan',    displayName: 'Priya Nair',   color: '#9B6DB5', bio: 'Podcast addict. Always listening.', interests: ['podcast','film'] },
+  { email: 'theo@hobbyist.app',   username: 'theow',     displayName: 'Theo Walsh',   color: '#4AADAB', bio: 'Music, film, the occasional novel.', interests: ['film','game'] },
+  { email: 'ines@hobbyist.app',   username: 'inesm',     displayName: 'Ines Moreau',  color: '#E87070', bio: 'Parisienne in Brooklyn. Books and films and wine.', interests: ['book','film'] },
+  { email: 'kai@hobbyist.app',    username: 'kain',      displayName: 'Kai Nakamura', color: '#D4A853', bio: 'Speedrunner and slow reader.', interests: ['game','podcast'] },
 ]
 
 async function addPosts(clubId, userIds, posts) {
@@ -285,7 +285,7 @@ async function main() {
 
   console.log('\n✓ Seed complete!')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.log('Demo login: alex@folio.app')
+  console.log('Demo login: alex@hobbyist.app')
   console.log('Password:   password123')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 }

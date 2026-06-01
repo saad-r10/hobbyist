@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+jobs:
+  frontend:
+    name: Frontend — lint & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (standard)
+        run: npm run build
+
+      - name: Build (demo / GitHub Pages)
+        run: npm run build:demo
+
+  server:
+    name: Server — install & validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Push schema (SQLite)
+        run: npx prisma db push
+        env:
+          DATABASE_URL: file:./prisma/ci.db
+
+      - name: Verify server starts
+        run: |
+          timeout 5 node src/index.js &
+          sleep 2
+          curl -f http://localhost:3001/api/health || exit 1
+        env:
+          DATABASE_URL: file:./prisma/ci.db
+          JWT_SECRET: ci-test-secret-at-least-32-characters-long
+          NODE_ENV: production

@@ -1,24 +1,59 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
 
+/* ── Theme tokens ──────────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --bg:         #0F1923;
+  --surface:    #162030;
+  --surface2:   #1e2d40;
+  --border:     rgba(245, 240, 232, 0.08);
+  --text:       #F5F0E8;
+  --text-dim:   rgba(245, 240, 232, 0.50);
+  --text-muted: rgba(245, 240, 232, 0.30);
+  --accent:     #E8A020;
+  --accent-bg:  rgba(232, 160, 32, 0.12);
+  --shimmer-a:  #162030;
+  --shimmer-b:  #1e2d40;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg:         #F0E6D3;
+  --surface:    #EDE0C4;
+  --surface2:   #E5D4B0;
+  --border:     rgba(44, 24, 16, 0.12);
+  --text:       #2C1810;
+  --text-dim:   rgba(44, 24, 16, 0.55);
+  --text-muted: rgba(44, 24, 16, 0.35);
+  --accent:     #B87412;
+  --accent-bg:  rgba(184, 116, 18, 0.12);
+  --shimmer-a:  #EDE0C4;
+  --shimmer-b:  #E0D0AF;
+  color-scheme: light;
+}
+
 * { box-sizing: border-box; }
+
+html { transition: background-color 0.2s, color 0.2s; }
 
 body {
   margin: 0;
-  background-color: #0F1923;
-  color: #F5F0E8;
+  background-color: var(--bg);
+  color: var(--text);
   font-family: 'DM Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 .font-display { font-family: 'Playfair Display', serif; }
 
+/* ── Animations ──────────────────────────────────────── */
 @keyframes shimmer {
   0%   { background-position: -400px 0; }
   100% { background-position:  400px 0; }
 }
 .shimmer {
-  background: linear-gradient(90deg, #162030 0%, #1e2d40 50%, #162030 100%);
+  background: linear-gradient(90deg, var(--shimmer-a) 0%, var(--shimmer-b) 50%, var(--shimmer-a) 100%);
   background-size: 400px 100%;
   animation: shimmer 1.6s infinite linear;
 }
@@ -35,30 +70,31 @@ body {
 }
 .pulse-dot { animation: pulseDot 1.8s ease-in-out infinite; }
 
+/* ── Scrollbars ──────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
-
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* ── Form controls ───────────────────────────────────── */
 .input-field {
   width: 100%;
-  background: #0F1923;
-  color: #F5F0E8;
-  border: 1px solid rgba(245, 240, 232, 0.12);
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 0.75rem;
   padding: 0.625rem 0.875rem;
   font-size: 0.875rem;
   outline: none;
   transition: border-color 0.15s;
 }
-.input-field::placeholder { color: rgba(245, 240, 232, 0.25); }
+.input-field::placeholder { color: var(--text-muted); }
 .input-field:focus { border-color: rgba(232, 160, 32, 0.6); }
 
 .btn-primary {
-  background: #E8A020;
-  color: #0F1923;
+  background: var(--accent);
+  color: #fff;
   font-weight: 600;
   font-size: 0.875rem;
   padding: 0.625rem 1.25rem;
@@ -67,19 +103,24 @@ body {
   cursor: pointer;
   transition: opacity 0.15s, transform 0.1s;
 }
+[data-theme="dark"] .btn-primary { color: #0F1923; }
 .btn-primary:hover:not(:disabled) { opacity: 0.9; }
 .btn-primary:active:not(:disabled) { transform: scale(0.98); }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-ghost {
-  background: rgba(245, 240, 232, 0.06);
-  color: rgba(245, 240, 232, 0.7);
+  background: var(--border);
+  color: var(--text-dim);
   font-weight: 500;
   font-size: 0.875rem;
   padding: 0.625rem 1.25rem;
   border-radius: 0.75rem;
-  border: 1px solid rgba(245, 240, 232, 0.1);
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: background 0.15s;
 }
-.btn-ghost:hover { background: rgba(245, 240, 232, 0.1); }
+.btn-ghost:hover { background: var(--surface2); }
+
+/* ── Utility ─────────────────────────────────────────── */
+.bg-white\/04 { background: rgba(255,255,255,0.04); }
+.bg-white\/08 { background: rgba(255,255,255,0.08); }

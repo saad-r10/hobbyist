@@ -12,7 +12,7 @@ const USERS = [
 ]
 
 export const ME = {
-  id: 1, email: 'alex@folio.app', username: 'alexchen', displayName: 'Alex Chen',
+  id: 1, email: 'alex@hobbyist.app', username: 'alexchen', displayName: 'Alex Chen',
   avatarColor: '#E8A020', avatarInitials: 'AC',
   bio: 'Reading, watching, and listening my way through life. SF → NYC.',
   onboardingDone: true,

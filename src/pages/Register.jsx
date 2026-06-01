@@ -68,7 +68,7 @@ export default function Register() {
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#E8A020' }}>
             <BookOpen size={16} style={{ color: '#0F1923' }} />
           </div>
-          <span className="font-display text-xl font-semibold" style={{ color: '#F5F0E8' }}>Folio</span>
+          <span className="font-display text-xl font-semibold" style={{ color: '#F5F0E8' }}>Hobbyist</span>
         </div>
 
         <div className="rounded-2xl p-6 border border-[#F5F0E8]/08" style={{ background: '#162030', color: '#F5F0E8' }}>

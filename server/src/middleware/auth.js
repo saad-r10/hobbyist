@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'folio-dev-secret-change-in-prod'
+const JWT_SECRET = process.env.JWT_SECRET || 'hobbyist-dev-secret-change-in-prod'
 
 export function signAccessToken(userId) {
   return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: '15m' })

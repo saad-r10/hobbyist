@@ -75,7 +75,7 @@ export default function Login() {
   return (
     <AuthShell>
       <h2 className="font-display text-2xl font-semibold mb-1">Welcome back</h2>
-      <p className="text-[#F5F0E8]/50 text-sm mb-6">Sign in to your Folio account.</p>
+      <p className="text-[#F5F0E8]/50 text-sm mb-6">Sign in to your Hobbyist account.</p>
 
       {error && (
         <div className="flex items-start gap-2 rounded-xl border border-[#E87070]/40 bg-[#E87070]/10 p-3 text-sm text-[#E87070] mb-4">
@@ -119,7 +119,7 @@ export default function Login() {
       </p>
 
       <div className="mt-8 rounded-xl border border-[#F5F0E8]/08 bg-[#F5F0E8]/03 p-3 text-xs text-[#F5F0E8]/30 text-center">
-        Demo: alex@folio.app / password123
+        Demo: alex@hobbyist.app / password123
       </div>
     </AuthShell>
   )
@@ -133,7 +133,7 @@ function AuthShell({ children }) {
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#E8A020' }}>
             <BookOpen size={16} style={{ color: '#0F1923' }} />
           </div>
-          <span className="font-display text-xl font-semibold" style={{ color: '#F5F0E8' }}>Folio</span>
+          <span className="font-display text-xl font-semibold" style={{ color: '#F5F0E8' }}>Hobbyist</span>
         </div>
         <div className="rounded-2xl p-6 border border-[#F5F0E8]/08" style={{ background: '#162030', color: '#F5F0E8' }}>
           {children}
