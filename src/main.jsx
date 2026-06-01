@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { HashRouter, BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import './index.css'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
 import App from './App.jsx'
@@ -8,6 +8,9 @@ import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Onboarding from './pages/Onboarding.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
+
+// GitHub Pages can't handle BrowserRouter paths — use HashRouter for demo build
+const Router = import.meta.env.VITE_DEMO_MODE === 'true' ? HashRouter : BrowserRouter
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth()
@@ -41,7 +44,7 @@ function GuestOnly({ children }) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter>
+    <Router>
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
@@ -63,6 +66,6 @@ createRoot(document.getElementById('root')).render(
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Routes>
       </AuthProvider>
-    </BrowserRouter>
+    </Router>
   </StrictMode>
 )

@@ -1,5 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { api, setAccessToken, getAccessToken } from '../api/client.js'
+import { api, setAccessToken } from '../api/client.js'
+import { ME as DEMO_ME } from '../api/demo.js'
+
+const IS_DEMO = import.meta.env.VITE_DEMO_MODE === 'true'
 
 const AuthContext = createContext(null)
 
@@ -7,8 +10,14 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined) // undefined = loading, null = not authed
   const [loading, setLoading] = useState(true)
 
-  // On mount, try to restore session via refresh token cookie
+  // On mount, restore session (demo: auto-login as Alex Chen)
   useEffect(() => {
+    if (IS_DEMO) {
+      setAccessToken('demo-token')
+      setUser({ ...DEMO_ME })
+      setLoading(false)
+      return
+    }
     api('/auth/refresh', { method: 'POST' })
       .then(data => {
         setAccessToken(data.accessToken)

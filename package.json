@@ -10,6 +10,8 @@
     "db:seed": "cd server && node prisma/seed.js",
     "db:reset": "cd server && npx prisma db push --force-reset && node prisma/seed.js",
     "build": "vite build",
+    "build:demo": "VITE_DEMO_MODE=true vite build --base=/hobbyist/",
+    "deploy": "npm run build:demo && gh-pages -d dist",
     "lint": "eslint .",
     "preview": "vite preview"
   },
