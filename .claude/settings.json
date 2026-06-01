@@ -1,0 +1,33 @@
+{
+  "projectName": "Hobbyist",
+  "description": "A hobbyist club platform — track books, films, games and podcasts with friends",
+  "defaultBranch": "dev",
+  "branchPattern": "issue-{number}-{description}",
+  "workflow": {
+    "requireIssue": true,
+    "requireBranch": true,
+    "neverCommitTo": ["main", "dev"]
+  },
+  "hooks": {
+    "PreToolUse": [".claude/hooks/pre-tool-use.sh"],
+    "PostToolUse": [],
+    "Stop": [".claude/hooks/post-stop.sh"]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(git push)",
+      "Bash(gh issue *)",
+      "Bash(gh pr *)",
+      "Bash(curl http://localhost:*)",
+      "Bash(node *)",
+      "Bash(npx prisma *)"
+    ]
+  }
+}

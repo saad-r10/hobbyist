@@ -57,9 +57,9 @@ export default function Onboarding() {
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ background: '#E8A020' }}>
                 <BookOpen size={28} style={{ color: '#0F1923' }} />
               </div>
-              <h1 className="font-display text-3xl font-semibold mb-3">Welcome to Folio{user ? `, ${user.displayName.split(' ')[0]}` : ''}!</h1>
+              <h1 className="font-display text-3xl font-semibold mb-3">Welcome to Hobbyist{user ? `, ${user.displayName.split(' ')[0]}` : ''}!</h1>
               <p className="text-[#F5F0E8]/60 text-base leading-relaxed mb-8">
-                Folio is where you and your friends track what you're reading, watching, playing, and listening to — together.
+                Hobbyist is where you and your friends track what you're reading, watching, playing, and listening to — together.
               </p>
               <div className="grid grid-cols-2 gap-3 mb-8 text-left">
                 {[
@@ -166,7 +166,7 @@ export default function Onboarding() {
                 </div>
               )}
               <button onClick={finish} disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
-                {loading ? 'Setting up…' : 'Enter Folio'} <ArrowRight size={16} />
+                {loading ? 'Setting up…' : 'Enter Hobbyist'} <ArrowRight size={16} />
               </button>
             </div>
           )}

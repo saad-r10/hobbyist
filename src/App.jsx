@@ -3,12 +3,14 @@ import {
   BookOpen, Film, Mic, Gamepad2, Home, Compass, Trophy,
   BarChart2, User, Heart, MessageCircle, Star,
   ArrowLeft, Flame, Plus, Check, Clock, Send, LogOut,
-  Users, AlertCircle, Loader2, X, Settings,
+  Users, AlertCircle, Loader2, X, Settings, Search, Sun, Moon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext.jsx'
+import { useTheme } from './contexts/ThemeContext.jsx'
 import { get, post, put } from './api/client.js'
 import ImportModal from './components/ImportModal.jsx'
+import SearchModal from './components/SearchModal.jsx'
 
 // ── Utility components ──────────────────────────────────────────────────
 
@@ -1254,9 +1256,11 @@ const TABS = [
 
 export default function App() {
   const { user, logout } = useAuth()
+  const { isDark, toggle: toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [tab, setTab] = useState('feed')
   const [selectedClub, setSelectedClub] = useState(null)
+  const [showSearch, setShowSearch] = useState(false)
 
   function handleLogout() {
     logout()
@@ -1278,7 +1282,7 @@ export default function App() {
           <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#E8A020' }}>
             <BookOpen size={14} style={{ color: '#0F1923' }} />
           </div>
-          <span className="font-display text-base font-semibold">Folio</span>
+          <span className="font-display text-base font-semibold">Hobbyist</span>
         </div>
         <div className="flex items-center gap-1">
           {TABS.map(({ id, label, Icon }) => (
@@ -1289,7 +1293,24 @@ export default function App() {
             </button>
           ))}
         </div>
-        <Avatar user={user} size={30} />
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowSearch(true)}
+            className="rounded-lg p-1.5 transition-colors"
+            style={{ background: 'var(--border)', color: 'var(--text-dim)' }} title="Search (/)">
+            <Search size={16} />
+          </button>
+          <button onClick={toggleTheme}
+            className="rounded-lg p-1.5 transition-colors"
+            style={{ background: 'var(--border)', color: 'var(--text-dim)' }}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          <button onClick={() => handleTabChange('profile')}
+            className="rounded-full ring-2 ring-transparent hover:ring-[#E8A020]/40 transition-all"
+            title="Your profile">
+            <Avatar user={user} size={30} />
+          </button>
+        </div>
       </nav>
 
       {/* Mobile bottom nav */}
@@ -1322,6 +1343,14 @@ export default function App() {
           {tab === 'profile' && <Profile onLogout={handleLogout} />}
         </div>
       </main>
+
+      {showSearch && (
+        <SearchModal
+          onClose={() => setShowSearch(false)}
+          onNavigateClub={(id) => { setShowSearch(false); handleTabChange('clubs'); setSelectedClub(id) }}
+          onNavigateProfile={() => { setShowSearch(false); handleTabChange('profile') }}
+        />
+      )}
     </div>
   )
 }

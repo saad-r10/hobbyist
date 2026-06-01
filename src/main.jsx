@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { HashRouter, BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import './index.css'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
+import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import App from './App.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
@@ -45,6 +46,7 @@ function GuestOnly({ children }) {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Router>
+      <ThemeProvider>
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
@@ -66,6 +68,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Routes>
       </AuthProvider>
+      </ThemeProvider>
     </Router>
   </StrictMode>
 )
