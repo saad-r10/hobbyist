@@ -21,16 +21,17 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  memberships    ClubMember[]
-  posts          Post[]
-  replies        Reply[]
-  ratings        Rating[]
-  chatMessages   ChatMessage[]
-  activities     Activity[]
-  refreshTokens  RefreshToken[]
-  resetTokens    PasswordReset[]
-  likesGiven     PostLike[]
-  progress       MemberProgress[]
+  memberships     ClubMember[]
+  posts           Post[]
+  replies         Reply[]
+  ratings         Rating[]
+  chatMessages    ChatMessage[]
+  activities      Activity[]
+  refreshTokens   RefreshToken[]
+  resetTokens     PasswordReset[]
+  likesGiven      PostLike[]
+  progress        MemberProgress[]
+  personalRatings PersonalRating[]
 }
 
 model Club {
@@ -176,6 +177,23 @@ model RefreshToken {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PersonalRating {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  title       String
+  subtitle    String    @default("")
+  type        String    // book, film, podcast, game
+  rating      Float?
+  review      String    @default("")
+  source      String    @default("manual") // letterboxd, goodreads, manual
+  consumedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, title, type])
 }
 
 model PasswordReset {

@@ -11,63 +11,80 @@ const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const userId = req.userId
 
-  const [ratings, activities, memberships] = await Promise.all([
+  const [clubRatings, personalRatings, activities, memberships] = await Promise.all([
     prisma.rating.findMany({
       where: { userId },
       include: { item: true },
       orderBy: { createdAt: 'desc' },
     }),
+    prisma.personalRating.findMany({
+      where: { userId },
+      orderBy: [{ consumedAt: 'desc' }, { createdAt: 'desc' }],
+    }),
     prisma.activity.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } }),
     prisma.clubMember.count({ where: { userId } }),
   ])
 
-  // Summary
-  const avgRating = ratings.length
-    ? (ratings.reduce((s, r) => s + r.rating, 0) / ratings.length).toFixed(1)
+  // Merge both rating sources into a unified list
+  const allRatings = [
+    ...clubRatings.map(r => ({
+      id: `club-${r.id}`,
+      title: r.item.title,
+      subtitle: r.item.subtitle,
+      type: r.item.type,
+      rating: r.rating,
+      review: r.review,
+      source: 'club',
+      createdAt: r.createdAt,
+    })),
+    ...personalRatings.map(r => ({
+      id: `personal-${r.id}`,
+      title: r.title,
+      subtitle: r.subtitle,
+      type: r.type,
+      rating: r.rating,
+      review: r.review,
+      source: r.source,
+      createdAt: r.consumedAt || r.createdAt,
+    })),
+  ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+  const rated = allRatings.filter(r => r.rating != null)
+  const avgRating = rated.length
+    ? (rated.reduce((s, r) => s + r.rating, 0) / rated.length).toFixed(1)
     : 0
 
-  // Monthly breakdown for last 6 months
+  // Monthly breakdown — count unique finished items per month
   const now = new Date()
   const monthly = []
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
     const end = new Date(d.getFullYear(), d.getMonth() + 1, 1)
 
-    const monthActivities = activities.filter(a => {
-      const t = new Date(a.createdAt)
+    const inMonth = allRatings.filter(r => {
+      const t = new Date(r.createdAt)
       return t >= d && t < end
     })
 
     const byType = { book: 0, film: 0, podcast: 0, game: 0 }
-    monthActivities.forEach(a => {
-      if (a.type === 'rated' || a.type === 'finished_item') {
-        // Try to figure out type from title or default to book
-        byType.book++
-      }
-    })
+    inMonth.forEach(r => { if (byType[r.type] !== undefined) byType[r.type]++ })
 
     monthly.push({
       month: MONTH_NAMES[d.getMonth()],
-      total: monthActivities.length,
+      total: inMonth.length,
       ...byType,
     })
   }
 
-  // Type distribution
+  // Type distribution across all ratings
   const typeMap = { book: 0, film: 0, podcast: 0, game: 0 }
-  ratings.forEach(r => {
-    const type = r.item.type
-    if (typeMap[type] !== undefined) typeMap[type]++
-  })
-  const total = Object.values(typeMap).reduce((a, b) => a + b, 0) || 1
+  allRatings.forEach(r => { if (typeMap[r.type] !== undefined) typeMap[r.type]++ })
+  const typeTotal = Object.values(typeMap).reduce((a, b) => a + b, 0) || 1
   const types = Object.entries(typeMap).map(([type, count]) => ({
-    type,
-    count,
-    pct: Math.round((count / total) * 100),
+    type, count, pct: Math.round((count / typeTotal) * 100),
   }))
 
-  // Activity heatmap: last 52 weeks
-  const heatmap = []
+  // Activity heatmap: personal ratings add weight on their consumed date
   const yearAgo = new Date(now)
   yearAgo.setFullYear(yearAgo.getFullYear() - 1)
 
@@ -76,7 +93,13 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
     const key = new Date(a.createdAt).toDateString()
     dayMap[key] = (dayMap[key] || 0) + 1
   })
+  personalRatings.forEach(r => {
+    const date = r.consumedAt || r.createdAt
+    const key = new Date(date).toDateString()
+    dayMap[key] = (dayMap[key] || 0) + 1
+  })
 
+  const heatmap = []
   for (let w = 0; w < 52; w++) {
     const week = []
     for (let d = 0; d < 7; d++) {
@@ -88,28 +111,25 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
     heatmap.push(week)
   }
 
-  // Recent ratings
-  const recentRatings = ratings.slice(0, 8).map(r => ({
-    id: r.id,
-    title: r.item.title,
-    subtitle: r.item.subtitle,
-    type: r.item.type,
-    rating: r.rating,
-    review: r.review,
-    createdAt: r.createdAt,
-  }))
+  // Import breakdown for profile display
+  const importSources = {}
+  personalRatings.forEach(r => {
+    importSources[r.source] = (importSources[r.source] || 0) + 1
+  })
 
   res.json({
     summary: {
-      finished: ratings.length,
+      finished: allRatings.length,
       avgRating: Number(avgRating),
       clubs: memberships,
-      thisYear: activities.filter(a => new Date(a.createdAt).getFullYear() === now.getFullYear()).length,
+      thisYear: allRatings.filter(r => new Date(r.createdAt).getFullYear() === now.getFullYear()).length,
+      imported: personalRatings.length,
     },
     monthly,
     types,
     heatmap,
-    recentRatings,
+    recentRatings: allRatings.slice(0, 8),
+    importSources,
   })
 }))
 

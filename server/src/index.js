@@ -11,6 +11,7 @@ import leaderboardRoutes from './routes/leaderboard.js'
 import analyticsRoutes from './routes/analytics.js'
 import postRoutes from './routes/posts.js'
 import chatRoutes from './routes/chat.js'
+import importRoutes from './routes/import.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
@@ -32,6 +33,7 @@ app.use('/api/leaderboard', leaderboardRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/posts', postRoutes)
 app.use('/api/chat', chatRoutes)
+app.use('/api/import', importRoutes)
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 app.use(errorHandler)

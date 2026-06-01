@@ -8,6 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext.jsx'
 import { get, post, put } from './api/client.js'
+import ImportModal from './components/ImportModal.jsx'
 
 // ── Utility components ──────────────────────────────────────────────────
 
@@ -1050,13 +1051,21 @@ function Analytics() {
 
 // ── Profile ───────────────────────────────────────────────────────────────
 
+const SOURCE_META = {
+  letterboxd: { label: 'Letterboxd', color: '#00AC34' },
+  goodreads:  { label: 'Goodreads',  color: '#553B08' },
+  manual:     { label: 'Manual',     color: '#E8A020' },
+  club:       { label: 'Clubs',      color: '#6B8DD6' },
+}
+
 function Profile({ onLogout }) {
   const { user, updateUser } = useAuth()
   const { data: me, loading, error } = useApi(() => get('/users/me'))
-  const { data: analytics } = useApi(() => get('/analytics'))
+  const { data: analytics, refetch: refetchAnalytics } = useApi(() => get('/analytics'))
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ displayName: '', bio: '' })
   const [saving, setSaving] = useState(false)
+  const [showImport, setShowImport] = useState(false)
 
   useEffect(() => {
     if (me) setForm({ displayName: me.displayName, bio: me.bio || '' })
@@ -1078,6 +1087,7 @@ function Profile({ onLogout }) {
 
   const profile = me || user
   const INTEREST_MAP = { book: { label: 'Books', color: '#C47D5A' }, film: { label: 'Films', color: '#6B8DD6' }, podcast: { label: 'Podcasts', color: '#4AADAB' }, game: { label: 'Games', color: '#9B6DB5' } }
+  const importSources = analytics?.importSources || {}
 
   return (
     <div className="space-y-4">
@@ -1117,7 +1127,7 @@ function Profile({ onLogout }) {
         {/* Stats strip */}
         <div className="grid grid-cols-3 gap-0 pt-4 border-t border-[#F5F0E8]/08 mt-4">
           {[
-            { val: me?.stats?.finished ?? 0, label: 'Finished' },
+            { val: analytics?.summary?.finished ?? me?.stats?.finished ?? 0, label: 'Total' },
             { val: me?.stats?.clubs ?? 0, label: 'Clubs' },
             { val: analytics?.summary?.avgRating ? `${analytics.summary.avgRating}★` : '—', label: 'Avg rating' },
           ].map((s, i) => (
@@ -1144,17 +1154,64 @@ function Profile({ onLogout }) {
         </div>
       )}
 
+      {/* Import history */}
+      <div className="rounded-2xl p-4 border border-[#F5F0E8]/06" style={{ background: '#162030' }}>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="text-sm font-semibold text-[#F5F0E8]/80">Import history</h3>
+            {analytics?.summary?.imported > 0 && (
+              <p className="text-xs text-[#F5F0E8]/40 mt-0.5">
+                {analytics.summary.imported} items imported from external platforms
+              </p>
+            )}
+          </div>
+          <button onClick={() => setShowImport(true)}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+            style={{ background: 'rgba(232,160,32,0.12)', color: '#E8A020' }}>
+            <Plus size={12} /> Import
+          </button>
+        </div>
+
+        {Object.keys(importSources).length > 0 ? (
+          <div className="space-y-2">
+            {Object.entries(importSources).map(([source, count]) => {
+              const meta = SOURCE_META[source] || { label: source, color: '#E8A020' }
+              return (
+                <div key={source} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ background: meta.color }} />
+                    <span className="text-sm text-[#F5F0E8]/70">{meta.label}</span>
+                  </div>
+                  <span className="text-sm font-medium text-[#F5F0E8]/60">{count} items</span>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-[#F5F0E8]/30 text-center py-2">
+            No imports yet. Bring in your Letterboxd or Goodreads history.
+          </p>
+        )}
+      </div>
+
       {/* Recent ratings */}
       {analytics?.recentRatings?.length > 0 && (
         <div className="rounded-2xl p-4 border border-[#F5F0E8]/06" style={{ background: '#162030' }}>
           <h3 className="text-sm font-semibold text-[#F5F0E8]/80 mb-3">Recently rated</h3>
           <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-            {analytics.recentRatings.map(r => {
+            {analytics.recentRatings.filter(r => r.rating != null).map(r => {
               const color = { book: '#C47D5A', film: '#6B8DD6', podcast: '#4AADAB', game: '#9B6DB5' }[r.type] || '#E8A020'
+              const sourceMeta = SOURCE_META[r.source]
               return (
                 <div key={r.id} className="shrink-0 w-28 rounded-xl overflow-hidden border border-[#F5F0E8]/06">
-                  <div className="h-20 flex items-center justify-center" style={{ background: color + '30' }}>
+                  <div className="h-20 flex items-center justify-center relative" style={{ background: color + '30' }}>
                     <TypeIcon type={r.type} size={20} />
+                    {sourceMeta && r.source !== 'club' && (
+                      <div className="absolute bottom-1.5 right-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
+                        style={{ background: sourceMeta.color + '30', color: sourceMeta.color }}>
+                        {sourceMeta.label}
+                      </div>
+                    )}
                   </div>
                   <div className="p-2" style={{ background: '#0F1923' }}>
                     <p className="text-xs font-medium truncate text-[#F5F0E8]/90">{r.title}</p>
@@ -1173,6 +1230,13 @@ function Profile({ onLogout }) {
         style={{ background: 'rgba(232,112,112,0.05)' }}>
         <LogOut size={15} /> Sign out
       </button>
+
+      {showImport && (
+        <ImportModal
+          onClose={() => setShowImport(false)}
+          onImported={() => { refetchAnalytics() }}
+        />
+      )}
     </div>
   )
 }
