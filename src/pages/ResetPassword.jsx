@@ -19,7 +19,7 @@ export default function ResetPassword() {
     return (
       <Shell>
         <div className="text-center">
-          <p className="text-[#E87070] mb-4">Invalid or missing reset token.</p>
+          <p className="text-danger mb-4">Invalid or missing reset token.</p>
           <Link to="/login" className="btn-primary">Back to sign in</Link>
         </div>
       </Shell>
@@ -50,7 +50,7 @@ export default function ResetPassword() {
             <Check size={24} style={{ color: '#7A9E7E' }} />
           </div>
           <h2 className="font-display text-xl font-semibold mb-2">Password updated!</h2>
-          <p className="text-[#F5F0E8]/50 text-sm mb-6">You can now sign in with your new password.</p>
+          <p className="text-t50 text-sm mb-6">You can now sign in with your new password.</p>
           <button onClick={() => navigate('/login', { replace: true })} className="btn-primary w-full">Sign in</button>
         </div>
       </Shell>
@@ -60,28 +60,28 @@ export default function ResetPassword() {
   return (
     <Shell>
       <h2 className="font-display text-2xl font-semibold mb-1">Set new password</h2>
-      <p className="text-[#F5F0E8]/50 text-sm mb-6">Choose a strong password for your account.</p>
+      <p className="text-t50 text-sm mb-6">Choose a strong password for your account.</p>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-xl border border-[#E87070]/40 bg-[#E87070]/10 p-3 text-sm text-[#E87070] mb-4">
+        <div className="flex items-start gap-2 rounded-xl border border-danger-40 bg-danger-10 p-3 text-sm text-danger mb-4">
           <AlertCircle size={16} className="mt-0.5 shrink-0" /> {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-[#F5F0E8]/60 mb-1.5">New password</label>
+          <label className="block text-xs font-medium text-t60 mb-1.5">New password</label>
           <div className="relative">
             <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
               required minLength={8} placeholder="At least 8 characters" className="input-field pr-10" />
             <button type="button" onClick={() => setShowPw(s => !s)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#F5F0E8]/40 hover:text-[#F5F0E8]/70 transition-colors">
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-t40 hover:text-t70 transition-colors">
               {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#F5F0E8]/60 mb-1.5">Confirm password</label>
+          <label className="block text-xs font-medium text-t60 mb-1.5">Confirm password</label>
           <input type={showPw ? 'text' : 'password'} value={confirm} onChange={e => setConfirm(e.target.value)}
             required placeholder="Repeat your password" className="input-field" />
         </div>
@@ -95,15 +95,15 @@ export default function ResetPassword() {
 
 function Shell({ children }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: '#0F1923' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: 'var(--bg)' }}>
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 mb-8 justify-center">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#E8A020' }}>
-            <BookOpen size={16} style={{ color: '#0F1923' }} />
+            <BookOpen size={16} style={{ color: 'var(--bg)' }} />
           </div>
-          <span className="font-display text-xl font-semibold" style={{ color: '#F5F0E8' }}>Hobbyist</span>
+          <span className="font-display text-xl font-semibold" style={{ color: 'var(--text)' }}>Hobbyist</span>
         </div>
-        <div className="rounded-2xl p-6 border border-[#F5F0E8]/08" style={{ background: '#162030', color: '#F5F0E8' }}>
+        <div className="rounded-2xl p-6 border border-t08" style={{ background: 'var(--surface)', color: 'var(--text)' }}>
           {children}
         </div>
       </div>

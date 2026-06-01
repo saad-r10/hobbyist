@@ -162,27 +162,19 @@ export const DEMO_HANDLERS = {
 
   '/discover': async () => {
     await delay()
-    const rows = [
-      { type: 'book', label: 'Books', items: [
-        { id: 'b-0', title: 'The Name of the Wind', subtitle: 'Patrick Rothfuss', coverColor: '#2A1A0E', type: 'book', description: 'A legendary figure tells the story of his own extraordinary life.' },
-        { id: 'b-1', title: 'Project Hail Mary', subtitle: 'Andy Weir', coverColor: '#0D1A2A', type: 'book', description: 'A lone astronaut must save the earth from disaster.' },
-        { id: 'b-2', title: 'Lessons in Chemistry', subtitle: 'Bonnie Garmus', coverColor: '#2A2010', type: 'book', description: 'A female chemist becomes the star of a 1960s TV cooking show.' },
-        { id: 'b-3', title: 'James', subtitle: 'Percival Everett', coverColor: '#1A1A0A', type: 'book', description: "A reimagining of Huckleberry Finn from Jim's perspective." },
-      ]},
-      { type: 'film', label: 'Films', items: [
-        { id: 'f-0', title: 'All of Us Strangers', subtitle: 'Andrew Haigh', coverColor: '#20100D', type: 'film', description: 'A screenwriter bonds with his neighbor and revisits his childhood home.' },
-        { id: 'f-1', title: 'The Zone of Interest', subtitle: 'Jonathan Glazer', coverColor: '#0D200D', type: 'film', description: 'The mundane life of the Auschwitz commandant and his family.' },
-        { id: 'f-2', title: 'Monster', subtitle: 'Hirokazu Kore-eda', coverColor: '#0A1A2A', type: 'film', description: 'A mystery told from three perspectives.' },
-        { id: 'f-3', title: 'Dune: Part Two', subtitle: 'Denis Villeneuve', coverColor: '#2A1A00', type: 'film', description: 'Paul Atreides continues his journey among the Fremen of Arrakis.' },
-      ]},
-      { type: 'game', label: 'Games', items: [
-        { id: 'g-0', title: 'Disco Elysium', subtitle: 'ZA/UM', coverColor: '#0D1A20', type: 'game', description: 'A groundbreaking RPG about a detective with amnesia.' },
-        { id: 'g-1', title: 'The Forgotten City', subtitle: 'Modern Storyteller', coverColor: '#1A1400', type: 'game', description: 'A narrative mystery in ancient Rome with a dark twist.' },
-        { id: 'g-2', title: 'Animal Crossing: New Horizons', subtitle: 'Nintendo', coverColor: '#0D2010', type: 'game', description: 'Build your dream island life at your own pace.' },
-        { id: 'g-3', title: 'Balatro', subtitle: 'LocalThunk', coverColor: '#1A0A0A', type: 'game', description: "A roguelike poker-inspired deck builder that's utterly addictive." },
-      ]},
-    ]
-    return { featured: { ...rows[0].items[0] }, rows }
+    // Demo mode: simulate real discover data (clubs not joined by Alex)
+    // In real mode, these would be clubs from the DB that Alex hasn't joined
+    return {
+      trending: [],
+      newClubs: [],
+      forYou: [],
+      people: [
+        { id: 2, displayName: 'Maya Patel',   username: 'mayap',    avatarColor: '#7A9E7E', avatarInitials: 'MP', bio: 'Design + sci-fi + too much coffee.', interests: ['book','podcast'] },
+        { id: 5, displayName: 'Priya Nair',   username: 'priyan',   avatarColor: '#9B6DB5', avatarInitials: 'PN', bio: 'Podcast addict. Always listening.', interests: ['podcast','film'] },
+        { id: 7, displayName: 'Ines Moreau',  username: 'inesm',    avatarColor: '#E87070', avatarInitials: 'IM', bio: 'Parisienne in Brooklyn.', interests: ['book','film'] },
+      ],
+      myClubCount: 4,
+    }
   },
 
   '/leaderboard': async () => {

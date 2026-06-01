@@ -42,7 +42,7 @@ function TypeIcon({ type, size = 13 }) {
 function Avatar({ user, size = 28 }) {
   return (
     <div className="rounded-full flex items-center justify-center font-semibold shrink-0"
-      style={{ width: size, height: size, background: user.avatarColor || '#E8A020', fontSize: size * 0.35, color: '#0F1923' }}>
+      style={{ width: size, height: size, background: user.avatarColor || '#E8A020', fontSize: size * 0.35, color: 'var(--bg)' }}>
       {user.avatarInitials}
     </div>
   )
@@ -91,26 +91,26 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4"
-      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      style={{ background: 'var(--overlay)', backdropFilter: 'blur(4px)' }}
       onClick={onClose}>
-      <div className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl border border-[#F5F0E8]/10"
-        style={{ background: '#162030' }}
+      <div className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl border border-themed/10"
+        style={{ background: 'var(--surface)' }}
         onClick={e => e.stopPropagation()}>
 
         {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#F5F0E8]/08">
-          <Search size={18} className="text-[#F5F0E8]/40 shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-t08">
+          <Search size={18} className="text-t40 shrink-0" />
           <input
             ref={inputRef}
             value={query}
             onChange={handleInput}
             placeholder="Search clubs, people, items…"
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-[#F5F0E8]/30"
-            style={{ color: '#F5F0E8' }}
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-t30"
+            style={{ color: 'var(--text)' }}
           />
           {query && (
             <button onClick={() => { setQuery(''); setResults(null); inputRef.current?.focus() }}
-              className="text-[#F5F0E8]/30 hover:text-[#F5F0E8]/60 transition-colors">
+              className="text-t30 hover:text-t60 transition-colors">
               <X size={16} />
             </button>
           )}
@@ -120,8 +120,8 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
         <div className="overflow-y-auto no-scrollbar" style={{ maxHeight: '60vh' }}>
           {!query && (
             <div className="py-10 text-center">
-              <Search size={24} className="mx-auto mb-2 text-[#F5F0E8]/15" />
-              <p className="text-sm text-[#F5F0E8]/30">Search for clubs, people, or items</p>
+              <Search size={24} className="mx-auto mb-2 text-t15" />
+              <p className="text-sm text-t30">Search for clubs, people, or items</p>
             </div>
           )}
 
@@ -133,8 +133,8 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
 
           {query && !loading && results && !hasResults && (
             <div className="py-10 text-center">
-              <p className="text-sm text-[#F5F0E8]/40">No results for <span className="text-[#F5F0E8]/70">"{query}"</span></p>
-              <p className="text-xs text-[#F5F0E8]/25 mt-1">Try different words or check spelling</p>
+              <p className="text-sm text-t40">No results for <span className="text-t70">"{query}"</span></p>
+              <p className="text-xs text-t25 mt-1">Try different words or check spelling</p>
             </div>
           )}
 
@@ -142,14 +142,14 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
             <Section label="Clubs">
               {results.clubs.map(club => (
                 <button key={club.id} onClick={() => onNavigateClub(club.id)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-white/04 transition-colors">
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-s04 transition-colors">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
                     style={{ background: `${club.accentColor}20` }}>
                     {club.emoji}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#F5F0E8]/90 truncate">{club.name}</p>
-                    <p className="text-xs text-[#F5F0E8]/40 truncate">{club.memberCount} members · {club.type}</p>
+                    <p className="text-sm font-medium text-t90 truncate">{club.name}</p>
+                    <p className="text-xs text-t40 truncate">{club.memberCount} members · {club.type}</p>
                   </div>
                 </button>
               ))}
@@ -160,11 +160,11 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
             <Section label="People">
               {results.users.map(user => (
                 <button key={user.id} onClick={onNavigateProfile}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-white/04 transition-colors">
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-s04 transition-colors">
                   <Avatar user={user} size={30} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#F5F0E8]/90 truncate">{user.displayName}</p>
-                    <p className="text-xs text-[#F5F0E8]/40 truncate">@{user.username}{user.bio ? ` · ${user.bio.slice(0, 40)}` : ''}</p>
+                    <p className="text-sm font-medium text-t90 truncate">{user.displayName}</p>
+                    <p className="text-xs text-t40 truncate">@{user.username}{user.bio ? ` · ${user.bio.slice(0, 40)}` : ''}</p>
                   </div>
                 </button>
               ))}
@@ -180,8 +180,8 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
                     <TypeIcon type={item.type} size={14} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#F5F0E8]/90 truncate">{item.title}</p>
-                    <p className="text-xs text-[#F5F0E8]/40 truncate">{item.subtitle} · {item.clubName}</p>
+                    <p className="text-sm font-medium text-t90 truncate">{item.title}</p>
+                    <p className="text-xs text-t40 truncate">{item.subtitle} · {item.clubName}</p>
                   </div>
                 </div>
               ))}
@@ -190,8 +190,8 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
         </div>
 
         {/* Footer hint */}
-        <div className="px-4 py-2 border-t border-[#F5F0E8]/06 flex gap-4">
-          <span className="text-xs text-[#F5F0E8]/20">Press <kbd className="px-1 rounded text-[10px] bg-white/08">Esc</kbd> to close</span>
+        <div className="px-4 py-2 border-t border-t06 flex gap-4">
+          <span className="text-xs text-t25">Press <kbd className="px-1 rounded text-[10px] bg-s06">Esc</kbd> to close</span>
         </div>
       </div>
     </div>
@@ -201,7 +201,7 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
 function Section({ label, children }) {
   return (
     <div>
-      <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[#F5F0E8]/30">{label}</p>
+      <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-t30">{label}</p>
       {children}
     </div>
   )

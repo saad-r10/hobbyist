@@ -62,21 +62,21 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12" style={{ background: '#0F1923' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12" style={{ background: 'var(--bg)' }}>
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 mb-8 justify-center">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#E8A020' }}>
-            <BookOpen size={16} style={{ color: '#0F1923' }} />
+            <BookOpen size={16} style={{ color: 'var(--bg)' }} />
           </div>
-          <span className="font-display text-xl font-semibold" style={{ color: '#F5F0E8' }}>Hobbyist</span>
+          <span className="font-display text-xl font-semibold" style={{ color: 'var(--text)' }}>Hobbyist</span>
         </div>
 
-        <div className="rounded-2xl p-6 border border-[#F5F0E8]/08" style={{ background: '#162030', color: '#F5F0E8' }}>
+        <div className="rounded-2xl p-6 border border-t08" style={{ background: 'var(--surface)', color: 'var(--text)' }}>
           <h2 className="font-display text-2xl font-semibold mb-1">Create your account</h2>
-          <p className="text-[#F5F0E8]/50 text-sm mb-6">Join clubs, track your reads and watches.</p>
+          <p className="text-t50 text-sm mb-6">Join clubs, track your reads and watches.</p>
 
           {serverError && (
-            <div className="flex items-start gap-2 rounded-xl border border-[#E87070]/40 bg-[#E87070]/10 p-3 text-sm text-[#E87070] mb-4">
+            <div className="flex items-start gap-2 rounded-xl border border-danger-40 bg-danger-10 p-3 text-sm text-danger mb-4">
               <AlertCircle size={16} className="mt-0.5 shrink-0" />
               {serverError}
             </div>
@@ -91,7 +91,7 @@ export default function Register() {
 
             <Field label="Username" error={errors.username}>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#F5F0E8]/30 text-sm">@</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-t30 text-sm">@</span>
                 <input type="text" value={form.username} onChange={set('username')}
                   placeholder="alexchen" autoComplete="username"
                   className={`input-field pl-7 ${errors.username ? 'border-[#E87070]/60' : ''}`} />
@@ -110,7 +110,7 @@ export default function Register() {
                   placeholder="At least 8 characters" autoComplete="new-password"
                   className={`input-field pr-10 ${errors.password ? 'border-[#E87070]/60' : ''}`} />
                 <button type="button" onClick={() => setShowPw(s => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#F5F0E8]/40 hover:text-[#F5F0E8]/70 transition-colors">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-t40 hover:text-t70 transition-colors">
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -133,7 +133,7 @@ export default function Register() {
                   placeholder="Repeat your password" autoComplete="new-password"
                   className={`input-field pr-10 ${errors.confirmPassword ? 'border-[#E87070]/60' : ''}`} />
                 {form.confirmPassword && form.password === form.confirmPassword && (
-                  <Check size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A9E7E]" />
+                  <Check size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-success" />
                 )}
               </div>
             </Field>
@@ -143,9 +143,9 @@ export default function Register() {
             </button>
           </form>
 
-          <p className="mt-5 text-center text-sm text-[#F5F0E8]/40">
+          <p className="mt-5 text-center text-sm text-t40">
             Already have an account?{' '}
-            <Link to="/login" className="text-[#E8A020] hover:text-[#E8A020]/80 transition-colors font-medium">
+            <Link to="/login" className="text-[#E8A020] hover:text-accent transition-colors font-medium">
               Sign in
             </Link>
           </p>
@@ -158,9 +158,9 @@ export default function Register() {
 function Field({ label, error, children }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-[#F5F0E8]/60 mb-1.5">{label}</label>
+      <label className="block text-xs font-medium text-t60 mb-1.5">{label}</label>
       {children}
-      {error && <p className="mt-1 text-xs text-[#E87070]">{error}</p>}
+      {error && <p className="mt-1 text-xs text-danger">{error}</p>}
     </div>
   )
 }
