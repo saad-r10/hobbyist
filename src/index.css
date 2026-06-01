@@ -41,3 +41,45 @@ body {
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.input-field {
+  width: 100%;
+  background: #0F1923;
+  color: #F5F0E8;
+  border: 1px solid rgba(245, 240, 232, 0.12);
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input-field::placeholder { color: rgba(245, 240, 232, 0.25); }
+.input-field:focus { border-color: rgba(232, 160, 32, 0.6); }
+
+.btn-primary {
+  background: #E8A020;
+  color: #0F1923;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-primary:hover:not(:disabled) { opacity: 0.9; }
+.btn-primary:active:not(:disabled) { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-ghost {
+  background: rgba(245, 240, 232, 0.06);
+  color: rgba(245, 240, 232, 0.7);
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(245, 240, 232, 0.1);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-ghost:hover { background: rgba(245, 240, 232, 0.1); }

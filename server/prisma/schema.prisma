@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
+  username       String   @unique
+  displayName    String
+  passwordHash   String
+  bio            String   @default("")
+  avatarColor    String   @default("#E8A020")
+  avatarInitials String
+  onboardingDone Boolean  @default(false)
+  interests      String   @default("[]")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  memberships    ClubMember[]
+  posts          Post[]
+  replies        Reply[]
+  ratings        Rating[]
+  chatMessages   ChatMessage[]
+  activities     Activity[]
+  refreshTokens  RefreshToken[]
+  resetTokens    PasswordReset[]
+  likesGiven     PostLike[]
+  progress       MemberProgress[]
+}
+
+model Club {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String   @default("")
+  type        String
+  emoji       String   @default("📚")
+  accentColor String   @default("#E8A020")
+  bgColor     String   @default("#162030")
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members      ClubMember[]
+  items        ClubItem[]
+  posts        Post[]
+  chatMessages ChatMessage[]
+}
+
+model ClubMember {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  clubId   Int
+  role     String   @default("member")
+  joinedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clubId])
+}
+
+model ClubItem {
+  id          Int       @id @default(autoincrement())
+  clubId      Int
+  title       String
+  subtitle    String    @default("")
+  description String    @default("")
+  coverColor  String    @default("#162030")
+  type        String
+  status      String    @default("current")
+  addedAt     DateTime  @default(now())
+  finishedAt  DateTime?
+
+  club           Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  ratings        Rating[]
+  memberProgress MemberProgress[]
+}
+
+model MemberProgress {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  itemId    Int
+  progress  Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item ClubItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  clubId    Int
+  userId    Int
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  club    Club       @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies Reply[]
+  likes   PostLike[]
+}
+
+model Reply {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  text      String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PostLike {
+  userId Int
+  postId Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  clubId    Int
+  userId    Int
+  text      String
+  createdAt DateTime @default(now())
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Rating {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  itemId    Int
+  rating    Float
+  review    String   @default("")
+  createdAt DateTime @default(now())
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item ClubItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+}
+
+model Activity {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String
+  title     String   @default("")
+  clubName  String   @default("")
+  rating    Float?
+  extra     String   @default("{}")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
