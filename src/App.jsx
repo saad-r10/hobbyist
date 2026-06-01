@@ -1442,6 +1442,26 @@ const TABS = [
   { id: 'profile',   label: 'Profile',  Icon: User },
 ]
 
+const IS_DEMO = import.meta.env.VITE_DEMO_MODE === 'true'
+
+function DemoBanner() {
+  const [dismissed, setDismissed] = useState(false)
+  if (!IS_DEMO || dismissed) return null
+  return (
+    <div className="flex items-center justify-between px-4 py-2 text-xs font-medium"
+      style={{ background: 'var(--accent)', color: 'var(--accent-text)', zIndex: 50, position: 'relative' }}>
+      <span>
+        <strong>Demo mode</strong> — data persists within this browser tab and resets when you close it.
+        {' '}<a href="https://github.com/saad-r10/hobbyist#getting-started" target="_blank" rel="noopener noreferrer"
+          className="underline opacity-80 hover:opacity-100">Run locally</a> for the full app.
+      </span>
+      <button onClick={() => setDismissed(true)} className="ml-4 opacity-70 hover:opacity-100 shrink-0">
+        <X size={14} />
+      </button>
+    </div>
+  )
+}
+
 export default function App() {
   const { user, logout } = useAuth()
   const { isDark, toggle: toggleTheme } = useTheme()
@@ -1464,8 +1484,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+      <DemoBanner />
       {/* Desktop top nav */}
-      <nav className="hidden sm:flex fixed top-0 left-0 right-0 z-40 items-center justify-between px-6 h-14 border-b border-t06" style={{ background: 'var(--nav-bg)', backdropFilter: 'blur(12px)' }}>
+      <nav className="hidden sm:flex sticky top-0 left-0 right-0 z-40 items-center justify-between px-6 h-14 border-b border-t06" style={{ background: 'var(--nav-bg)', backdropFilter: 'blur(12px)' }}>
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#E8A020' }}>
             <BookOpen size={14} style={{ color: 'var(--bg)' }} />
@@ -1514,7 +1535,7 @@ export default function App() {
       </nav>
 
       {/* Main content */}
-      <main className="pt-4 sm:pt-20 pb-24 sm:pb-8 px-4 max-w-2xl mx-auto" key={tab}>
+      <main className="pt-4 sm:pt-4 pb-24 sm:pb-8 px-4 max-w-2xl mx-auto" key={tab}>
         <div className="fade-up">
           {tab !== 'clubs' || !selectedClub ? (
             <h1 className="font-display text-xl font-semibold mb-4">{TAB_TITLES[tab]}</h1>

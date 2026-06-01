@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { api, setAccessToken } from '../api/client.js'
-import { ME as DEMO_ME } from '../api/demo.js'
+import { getDemoUser, setDemoUser } from '../api/demo.js'
 
 const IS_DEMO = import.meta.env.VITE_DEMO_MODE === 'true'
 
@@ -10,14 +10,15 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined) // undefined = loading, null = not authed
   const [loading, setLoading] = useState(true)
 
-  // On mount, restore session (demo: auto-login as Alex Chen)
   useEffect(() => {
     if (IS_DEMO) {
+      // Demo mode: restore from session-backed demo state (not hardcoded Alex Chen)
       setAccessToken('demo-token')
-      setUser({ ...DEMO_ME })
+      setUser({ ...getDemoUser() })
       setLoading(false)
       return
     }
+    // Real mode: restore session via refresh token cookie
     api('/auth/refresh', { method: 'POST' })
       .then(data => {
         setAccessToken(data.accessToken)
@@ -32,14 +33,19 @@ export function AuthProvider({ children }) {
     const data = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) })
     setAccessToken(data.accessToken)
     const me = await api('/users/me')
+    if (IS_DEMO) setDemoUser(me)
     setUser(me)
     return me
   }, [])
 
   const register = useCallback(async ({ email, username, displayName, password }) => {
-    const data = await api('/auth/register', { method: 'POST', body: JSON.stringify({ email, username, displayName, password }) })
+    const data = await api('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, username, displayName, password }),
+    })
     setAccessToken(data.accessToken)
     const me = await api('/users/me')
+    if (IS_DEMO) setDemoUser(me)
     setUser(me)
     return me
   }, [])
@@ -47,11 +53,19 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     await api('/auth/logout', { method: 'POST' }).catch(() => {})
     setAccessToken(null)
+    if (IS_DEMO) {
+      // Reset demo session
+      try { sessionStorage.removeItem('hobbyist-demo-v2') } catch {}
+    }
     setUser(null)
   }, [])
 
   const updateUser = useCallback((patch) => {
-    setUser(prev => ({ ...prev, ...patch }))
+    setUser(prev => {
+      const updated = { ...prev, ...patch }
+      if (IS_DEMO) setDemoUser(updated)
+      return updated
+    })
   }, [])
 
   return (
