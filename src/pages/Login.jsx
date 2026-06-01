@@ -49,9 +49,9 @@ export default function Login() {
     return (
       <AuthShell>
         <h2 className="font-display text-2xl font-semibold mb-1">Reset your password</h2>
-        <p className="text-[#F5F0E8]/50 text-sm mb-6">We'll send a reset link to your inbox.</p>
+        <p className="text-t50 text-sm mb-6">We'll send a reset link to your inbox.</p>
         {forgotSent ? (
-          <div className="rounded-xl border border-[#7A9E7E]/40 bg-[#7A9E7E]/10 p-4 text-sm text-[#7A9E7E]">
+          <div className="rounded-xl border border-success bg-success-10 p-4 text-sm text-success">
             If that email is registered, a reset link is on its way. Check your inbox (and spam folder).
           </div>
         ) : (
@@ -65,7 +65,7 @@ export default function Login() {
             </button>
           </form>
         )}
-        <button onClick={() => { setForgotMode(false); setForgotSent(false) }} className="mt-4 text-sm text-[#F5F0E8]/40 hover:text-[#F5F0E8]/70 transition-colors">
+        <button onClick={() => { setForgotMode(false); setForgotSent(false) }} className="mt-4 text-sm text-t40 hover:text-t70 transition-colors">
           ← Back to sign in
         </button>
       </AuthShell>
@@ -75,10 +75,10 @@ export default function Login() {
   return (
     <AuthShell>
       <h2 className="font-display text-2xl font-semibold mb-1">Welcome back</h2>
-      <p className="text-[#F5F0E8]/50 text-sm mb-6">Sign in to your Hobbyist account.</p>
+      <p className="text-t50 text-sm mb-6">Sign in to your Hobbyist account.</p>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-xl border border-[#E87070]/40 bg-[#E87070]/10 p-3 text-sm text-[#E87070] mb-4">
+        <div className="flex items-start gap-2 rounded-xl border border-danger-40 bg-danger-10 p-3 text-sm text-danger mb-4">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
           {error}
         </div>
@@ -94,14 +94,14 @@ export default function Login() {
             <input type={showPw ? 'text' : 'password'} value={form.password} onChange={set('password')}
               required placeholder="••••••••" autoComplete="current-password" className="input-field pr-10" />
             <button type="button" onClick={() => setShowPw(s => !s)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#F5F0E8]/40 hover:text-[#F5F0E8]/70 transition-colors">
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-t40 hover:text-t70 transition-colors">
               {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
         </Field>
 
         <div className="flex justify-end">
-          <button type="button" onClick={() => setForgotMode(true)} className="text-xs text-[#E8A020]/70 hover:text-[#E8A020] transition-colors">
+          <button type="button" onClick={() => setForgotMode(true)} className="text-xs text-accent hover:text-[#E8A020] transition-colors">
             Forgot password?
           </button>
         </div>
@@ -111,14 +111,14 @@ export default function Login() {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-[#F5F0E8]/40">
+      <p className="mt-6 text-center text-sm text-t40">
         Don't have an account?{' '}
-        <Link to="/register" className="text-[#E8A020] hover:text-[#E8A020]/80 transition-colors font-medium">
+        <Link to="/register" className="text-[#E8A020] hover:text-accent transition-colors font-medium">
           Create one
         </Link>
       </p>
 
-      <div className="mt-8 rounded-xl border border-[#F5F0E8]/08 bg-[#F5F0E8]/03 p-3 text-xs text-[#F5F0E8]/30 text-center">
+      <div className="mt-8 rounded-xl border border-t08 bg-[#F5F0E8]/03 p-3 text-xs text-t30 text-center">
         Demo: alex@hobbyist.app / password123
       </div>
     </AuthShell>
@@ -127,15 +127,15 @@ export default function Login() {
 
 function AuthShell({ children }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: '#0F1923' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: 'var(--bg)' }}>
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 mb-8 justify-center">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#E8A020' }}>
-            <BookOpen size={16} style={{ color: '#0F1923' }} />
+            <BookOpen size={16} style={{ color: 'var(--bg)' }} />
           </div>
-          <span className="font-display text-xl font-semibold" style={{ color: '#F5F0E8' }}>Hobbyist</span>
+          <span className="font-display text-xl font-semibold" style={{ color: 'var(--text)' }}>Hobbyist</span>
         </div>
-        <div className="rounded-2xl p-6 border border-[#F5F0E8]/08" style={{ background: '#162030', color: '#F5F0E8' }}>
+        <div className="rounded-2xl p-6 border border-t08" style={{ background: 'var(--surface)', color: 'var(--text)' }}>
           {children}
         </div>
       </div>
@@ -146,7 +146,7 @@ function AuthShell({ children }) {
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-[#F5F0E8]/60 mb-1.5">{label}</label>
+      <label className="block text-xs font-medium text-t60 mb-1.5">{label}</label>
       {children}
     </div>
   )

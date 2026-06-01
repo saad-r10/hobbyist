@@ -204,16 +204,16 @@ export default function ImportModal({ onClose, onImported }) {
   const withDate = preview?.items?.filter(i => i.consumedAt).length ?? 0
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)' }} onClick={onClose}>
-      <div className="w-full max-w-lg rounded-2xl border border-[#F5F0E8]/08 overflow-hidden" style={{ background: '#162030', color: '#F5F0E8' }} onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: 'var(--overlay)' }} onClick={onClose}>
+      <div className="w-full max-w-lg rounded-2xl border border-t08 overflow-hidden" style={{ background: 'var(--surface)', color: 'var(--text)' }} onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#F5F0E8]/08">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-t08">
           <div>
             <h3 className="font-display text-lg font-semibold">Import your history</h3>
-            <p className="text-xs text-[#F5F0E8]/40 mt-0.5">Bring in ratings from other platforms</p>
+            <p className="text-xs text-t40 mt-0.5">Bring in ratings from other platforms</p>
           </div>
-          <button onClick={onClose} className="text-[#F5F0E8]/40 hover:text-[#F5F0E8]/70 transition-colors"><X size={18} /></button>
+          <button onClick={onClose} className="text-t40 hover:text-t70 transition-colors"><X size={18} /></button>
         </div>
 
         <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto no-scrollbar">
@@ -225,11 +225,11 @@ export default function ImportModal({ onClose, onImported }) {
                 <Check size={28} style={{ color: '#7A9E7E' }} />
               </div>
               <h4 className="font-display text-xl font-semibold mb-1">Import complete!</h4>
-              <p className="text-[#F5F0E8]/60 text-sm mb-1">
+              <p className="text-t60 text-sm mb-1">
                 <span style={{ color: '#7A9E7E' }} className="font-semibold">{result.imported}</span> items imported
-                {result.skipped > 0 && <span className="text-[#F5F0E8]/40"> · {result.skipped} skipped (duplicates)</span>}
+                {result.skipped > 0 && <span className="text-t40"> · {result.skipped} skipped (duplicates)</span>}
               </p>
-              <p className="text-xs text-[#F5F0E8]/30 mb-6">Your Stats tab has been updated.</p>
+              <p className="text-xs text-t30 mb-6">Your Stats tab has been updated.</p>
               <div className="flex gap-2">
                 <button onClick={reset} className="btn-ghost flex-1">Import more</button>
                 <button onClick={onClose} className="btn-primary flex-1">Done</button>
@@ -244,11 +244,11 @@ export default function ImportModal({ onClose, onImported }) {
                 const Icon = p.icon
                 return (
                   <button key={id} onClick={() => { setPlatform(id); setShowInstructions(true) }}
-                    className="rounded-xl p-4 text-left border border-[#F5F0E8]/08 hover:border-[#F5F0E8]/20 transition-all"
-                    style={{ background: 'rgba(245,240,232,0.03)' }}>
+                    className="rounded-xl p-4 text-left border border-t08 hover:border-themed/20 transition-all"
+                    style={{ background: 'var(--surface-03)' }}>
                     <Icon size={22} className="mb-2" style={{ color: p.color }} />
-                    <p className="font-semibold text-sm" style={{ color: '#F5F0E8' }}>{p.label}</p>
-                    <p className="text-xs text-[#F5F0E8]/40 mt-0.5 capitalize">{p.type}s</p>
+                    <p className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{p.label}</p>
+                    <p className="text-xs text-t40 mt-0.5 capitalize">{p.type}s</p>
                   </button>
                 )
               })}
@@ -258,41 +258,41 @@ export default function ImportModal({ onClose, onImported }) {
           {/* Platform selected — upload flow */}
           {!result && platform && (
             <>
-              <button onClick={reset} className="flex items-center gap-1.5 text-sm text-[#F5F0E8]/40 hover:text-[#F5F0E8]/70 transition-colors">
+              <button onClick={reset} className="flex items-center gap-1.5 text-sm text-t40 hover:text-t70 transition-colors">
                 ← Choose different platform
               </button>
 
               {/* Instructions toggle */}
-              <div className="rounded-xl border border-[#F5F0E8]/08 overflow-hidden">
+              <div className="rounded-xl border border-t08 overflow-hidden">
                 <button className="w-full flex items-center justify-between px-4 py-3 text-sm"
                   onClick={() => setShowInstructions(s => !s)}>
-                  <span className="font-medium" style={{ color: '#F5F0E8' }}>How to export from {config.label}</span>
-                  {showInstructions ? <ChevronUp size={15} className="text-[#F5F0E8]/40" /> : <ChevronDown size={15} className="text-[#F5F0E8]/40" />}
+                  <span className="font-medium" style={{ color: 'var(--text)' }}>How to export from {config.label}</span>
+                  {showInstructions ? <ChevronUp size={15} className="text-t40" /> : <ChevronDown size={15} className="text-t40" />}
                 </button>
                 {showInstructions && (
-                  <div className="px-4 pb-4 border-t border-[#F5F0E8]/06" style={{ background: 'rgba(0,0,0,0.15)' }}>
+                  <div className="px-4 pb-4 border-t border-t06" style={{ background: 'rgba(0,0,0,0.15)' }}>
                     <ol className="mt-3 space-y-2">
                       {config.instructions.map((step, i) => (
-                        <li key={i} className="flex gap-2.5 text-sm text-[#F5F0E8]/60">
+                        <li key={i} className="flex gap-2.5 text-sm text-t60">
                           <span className="shrink-0 w-5 h-5 rounded-full text-xs flex items-center justify-center font-semibold"
-                            style={{ background: 'rgba(232,160,32,0.15)', color: '#E8A020' }}>{i + 1}</span>
+                            style={{ background: 'var(--accent-15)', color: '#E8A020' }}>{i + 1}</span>
                           {step}
                         </li>
                       ))}
                     </ol>
-                    <p className="mt-3 text-xs text-[#F5F0E8]/30 border-t border-[#F5F0E8]/06 pt-3">{config.note}</p>
+                    <p className="mt-3 text-xs text-t30 border-t border-t06 pt-3">{config.note}</p>
                   </div>
                 )}
               </div>
 
               {/* File drop zone */}
               {!preview && (
-                <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-[#F5F0E8]/15 hover:border-[#E8A020]/50 transition-colors py-8 cursor-pointer"
+                <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-t15 hover:border-[#E8A020]/50 transition-colors py-8 cursor-pointer"
                   style={{ background: 'rgba(232,160,32,0.03)' }}>
-                  <Upload size={24} className="text-[#F5F0E8]/30" />
+                  <Upload size={24} className="text-t30" />
                   <div className="text-center">
-                    <p className="text-sm font-medium text-[#F5F0E8]/70">Click to upload your CSV</p>
-                    <p className="text-xs text-[#F5F0E8]/30 mt-0.5">
+                    <p className="text-sm font-medium text-t70">Click to upload your CSV</p>
+                    <p className="text-xs text-t30 mt-0.5">
                       {platform === 'letterboxd' ? 'ratings.csv or diary.csv' : 'goodreads_library_export.csv'}
                     </p>
                   </div>
@@ -318,11 +318,11 @@ export default function ImportModal({ onClose, onImported }) {
               {/* Preview */}
               {preview?.items?.length > 0 && (
                 <>
-                  <div className="rounded-xl border border-[#F5F0E8]/08 overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#F5F0E8]/06" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                  <div className="rounded-xl border border-t08 overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-t06" style={{ background: 'rgba(0,0,0,0.2)' }}>
                       <div>
-                        <p className="text-sm font-semibold" style={{ color: '#F5F0E8' }}>{preview.items.length.toLocaleString()} items found</p>
-                        <p className="text-xs text-[#F5F0E8]/40 mt-0.5">
+                        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{preview.items.length.toLocaleString()} items found</p>
+                        <p className="text-xs text-t40 mt-0.5">
                           {withRating} rated · {withDate} with dates
                         </p>
                       </div>
@@ -336,10 +336,10 @@ export default function ImportModal({ onClose, onImported }) {
                     <div className="divide-y divide-[#F5F0E8]/04">
                       {preview.items.slice(0, 5).map((item, i) => (
                         <div key={i} className="flex items-center gap-3 px-4 py-2.5">
-                          <config.icon size={13} className="shrink-0 text-[#F5F0E8]/30" />
+                          <config.icon size={13} className="shrink-0 text-t30" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-[#F5F0E8]/90 truncate">{item.title}</p>
-                            {item.subtitle && <p className="text-xs text-[#F5F0E8]/40 truncate">{item.subtitle}</p>}
+                            <p className="text-sm text-t90 truncate">{item.title}</p>
+                            {item.subtitle && <p className="text-xs text-t40 truncate">{item.subtitle}</p>}
                           </div>
                           {item.rating && (
                             <span className="text-xs font-semibold shrink-0" style={{ color: '#E8A020' }}>{item.rating}★</span>
@@ -347,7 +347,7 @@ export default function ImportModal({ onClose, onImported }) {
                         </div>
                       ))}
                       {preview.items.length > 5 && (
-                        <div className="px-4 py-2 text-xs text-center text-[#F5F0E8]/30">
+                        <div className="px-4 py-2 text-xs text-center text-t30">
                           + {preview.items.length - 5} more items
                         </div>
                       )}
