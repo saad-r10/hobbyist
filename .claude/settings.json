@@ -9,9 +9,19 @@
     "neverCommitTo": ["main", "dev"]
   },
   "hooks": {
-    "PreToolUse": [".claude/hooks/pre-tool-use.sh"],
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": ".claude/hooks/pre-tool-use.sh" }]
+      }
+    ],
     "PostToolUse": [],
-    "Stop": [".claude/hooks/post-stop.sh"]
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": ".claude/hooks/post-stop.sh" }]
+      }
+    ]
   },
   "permissions": {
     "allow": [
