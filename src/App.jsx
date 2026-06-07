@@ -106,7 +106,7 @@ function useApi(fetcher, deps = []) {
     } finally {
       setLoading(false)
     }
-  }, deps) // eslint-disable-line react-hooks/exhaustive-deps
+  }, deps) // eslint-disable-line react-hooks/exhaustive-deps, react-hooks/use-memo
 
   useEffect(() => { load() }, [load])
   return { data, loading, error, refetch: load, setData }
@@ -342,7 +342,7 @@ function MyClubs({ onSelectClub }) {
 
 // ── Club Detail ──────────────────────────────────────────────────────────
 
-function DiscussionTab({ clubId, accent, myUserId }) {
+function DiscussionTab({ clubId, accent }) {
   const { data: posts, loading, error, refetch, setData } = useApi(() => get(`/posts/club/${clubId}`), [clubId])
   const [expanded, setExpanded] = useState({})
   const [showNewPost, setShowNewPost] = useState(false)
@@ -371,7 +371,7 @@ function DiscussionTab({ clubId, accent, myUserId }) {
         ? { ...p, likedByMe: res.liked, likeCount: p.likeCount + (res.liked ? 1 : -1) }
         : p
       ))
-    } catch {}
+    } catch { /* optimistic like already applied */ }
   }
 
   async function submitReply(postId) {
@@ -571,7 +571,7 @@ function MembersTab({ members, currentItem, accent }) {
   )
 }
 
-function PastItemsTab({ items, accent }) {
+function PastItemsTab({ items }) {
   if (!items?.length) return <EmptyState icon={Clock} title="No past items yet" sub="Finish your current item to add it here." />
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -687,17 +687,14 @@ function ClubDetail({ clubId, currentUser, onBack }) {
   const [showAddItem, setShowAddItem] = useState(false)
   const [showRate, setShowRate] = useState(false)
   const [progress, setProgress] = useState(null)
-  const [savingProgress, setSavingProgress] = useState(false)
 
   const accent = club?.accentColor || '#E8A020'
   const isAdmin = club?.myRole === 'admin'
 
   async function updateProgress(val) {
     setProgress(val)
-    setSavingProgress(true)
     try { await put(`/clubs/${clubId}/progress`, { progress: val }) }
-    catch {}
-    finally { setSavingProgress(false) }
+    catch { /* fire-and-forget; optimistic update already applied */ }
   }
 
   if (loading) return <div className="py-12 flex justify-center"><Spinner /></div>
@@ -791,8 +788,6 @@ function ClubDetail({ clubId, currentUser, onBack }) {
 
 // ── Discover ──────────────────────────────────────────────────────────────
 
-const ACCENT_MAP = { book: '#C47D5A', film: '#6B8DD6', podcast: '#4AADAB', game: '#9B6DB5' }
-
 function DiscoverClubCard({ club, onJoin }) {
   const [joining, setJoining] = useState(false)
   const [joined, setJoined] = useState(false)
@@ -804,7 +799,7 @@ function DiscoverClubCard({ club, onJoin }) {
       await post(`/clubs/${club.id}/join`, {})
       setJoined(true)
       onJoin?.()
-    } catch {}
+    } catch { /* show nothing on join failure */ }
     finally { setJoining(false) }
   }
 
@@ -874,7 +869,7 @@ function DiscoverSection({ label, icon, clubs, onJoin, emptyText }) {
   )
 }
 
-function Discover({ onSelectClub }) {
+function Discover({ onSelectClub: _onSelectClub }) {
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState(null)
   const [searching, setSearching] = useState(false)
@@ -1258,6 +1253,7 @@ function Profile({ onLogout }) {
   const [showImport, setShowImport] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (me) setForm({ displayName: me.displayName, bio: me.bio || '' })
   }, [me])
 

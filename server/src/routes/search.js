@@ -14,8 +14,6 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
 
   if (q.length < 1) return res.json({ users: [], clubs: [], items: [] })
 
-  const term = `%${q}%`
-
   const [users, clubs, items] = await Promise.all([
     type === 'all' || type === 'users'
       ? prisma.user.findMany({

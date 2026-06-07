@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { X, Upload, BookOpen, Film, AlertCircle, Check, Loader2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
+import { X, Upload, BookOpen, Film, AlertCircle, Check, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import { post } from '../api/client.js'
 
 // ── CSV parser (handles quoted fields with commas inside) ─────────────────
