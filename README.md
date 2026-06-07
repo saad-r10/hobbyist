@@ -1,45 +1,86 @@
-# Folio
+# Hobbyist
 
-A hobbyist club platform prototype — where people host and join clubs around shared media. Think Goodreads meets Letterboxd meets Discord, purpose-built for small group clubs.
-
-Built as a single-page React app with no backend. All data is hardcoded mock data.
+A fully functional hobbyist club platform — where people host and join clubs around shared media. Think Goodreads meets Letterboxd meets Discord, purpose-built for small group clubs.
 
 ## Features
 
-**6 fully interactive tabs:**
+**Authentication & Accounts**
+- Register with email + username
+- Secure login with JWT (access + refresh tokens via httpOnly cookie)
+- Password reset via email token
+- 4-step onboarding flow with media interest selection
 
-- **Feed** — Global activity stream showing what everyone across your clubs is reading, watching, playing, and discussing. Skeleton loader on first render.
-- **Clubs** — Dashboard of your active clubs with progress rings, unread badges, and next meetup dates. Click any club to open a full detail view with four sub-tabs:
-  - *Discussion* — Threaded posts with expandable replies
-  - *Chat* — iMessage-style chat thread (your messages on the right)
-  - *Members* — Progress bars per member with last-active timestamps
-  - *Past Items* — Grid of previously finished items with ratings
-- **Discover** — Personalised recommendations with a featured hero card and three horizontal scroll rows filtered by club membership
-- **Ranks** — Leaderboard with a podium visual for the top 3, full ranked table with streak flames, and a "you're X spots away" nudge for the current user
-- **Stats** — Personal analytics dashboard: summary cards, stacked monthly bar chart, CSS conic-gradient donut chart, GitHub-style 52×7 activity heatmap, genre bars, and a recent ratings list
-- **Profile** — Alex Chen's profile with bio, stat strip, club badges, a horizontal ratings shelf, and a filtered activity feed
+**6 fully interactive tabs:**
+- **Feed** — Global activity stream from clubmates (real DB data)
+- **Clubs** — Dashboard of your clubs; click through to full Club Detail with 4 sub-tabs:
+  - *Discussion* — Threaded posts with live replies and like toggle
+  - *Chat* — Real-time-style messaging with optimistic updates
+  - *Members* — Progress bars per member on the current item
+  - *Past Items* — Grid of finished items with averaged ratings
+- **Discover** — Personalised recommendations based on your interests
+- **Ranks** — Leaderboard with podium visual, streaks, and your rank nudge
+- **Stats** — Personal analytics: bar chart, donut chart, 52×7 heatmap, recent ratings
+- **Profile** — Edit your bio/name, view your ratings shelf and interests
+
+**Club management:**
+- Create public or private clubs (book / film / podcast / game)
+- Admins set the current item; any member can update their progress (0–100%)
+- Rate any item (1–5 stars with optional review)
+- Discussion posts + replies, chat messages — all persisted to the database
 
 ## Stack
 
-- [React](https://react.dev/) — functional components + hooks
-- [Tailwind CSS v4](https://tailwindcss.com/) — utility styling via `@tailwindcss/vite`
-- [Lucide React](https://lucide.dev/) — icons
-- [Vite](https://vite.dev/) — build tool
-- Google Fonts — Playfair Display (headings) + DM Sans (UI)
-- No chart library — all data visualisations are built with divs and SVG
+| Layer | Tech |
+|---|---|
+| Frontend | React 19, Tailwind CSS v4, Lucide React, React Router v7 |
+| Backend | Express.js, Prisma ORM |
+| Database | SQLite (via `server/prisma/dev.db`) |
+| Auth | JWT (access + refresh), bcryptjs |
+| Build | Vite 8 |
 
 ## Getting started
 
 ```bash
-git clone https://github.com/saad-r10/clubhouse.git
-cd clubhouse
+git clone https://github.com/saad-r10/hobbyist.git
+cd hobbyist
+
+# Install frontend deps
 npm install
+
+# Install backend deps and set up database
+cd server
+npm install
+npx prisma db push
+node prisma/seed.js
+cd ..
+
+# Run both servers concurrently
 npm run dev
 ```
 
-Then open [http://localhost:5173](http://localhost:5173).
+Open [http://localhost:5173](http://localhost:5173).
 
-## Design
+**Demo credentials:** `alex@hobbyist.app` / `password123`  
+All 8 seeded users use the same password.
+
+## Project structure
+
+```
+├── src/                   # React frontend
+│   ├── api/client.js      # API client with token refresh
+│   ├── contexts/          # AuthContext
+│   ├── pages/             # Login, Register, Onboarding, ResetPassword
+│   └── App.jsx            # All tab components (Feed, Clubs, Discover, Ranks, Stats, Profile)
+└── server/
+    ├── prisma/
+    │   ├── schema.prisma  # Database schema
+    │   └── seed.js        # Demo data seeder
+    └── src/
+        ├── routes/        # auth, clubs, posts, chat, feed, discover, leaderboard, analytics
+        └── middleware/    # JWT auth, error handler
+```
+
+## Design tokens
 
 | Token | Value |
 |---|---|
@@ -49,4 +90,12 @@ Then open [http://localhost:5173](http://localhost:5173).
 | Secondary accent | `#7A9E7E` sage green |
 | Text | `#F5F0E8` warm off-white |
 
-All charts, progress rings, and the activity heatmap are CSS/SVG — no external visualisation libraries.
+Typography: Playfair Display (headings) · DM Sans (UI)
+
+## Next steps
+
+- WebSocket / SSE for real-time chat (currently polling on navigation)
+- Email delivery for password reset (currently logged to console)
+- Image uploads for avatars and cover art
+- Club invites and join requests for private clubs
+- Push notifications for club activity
