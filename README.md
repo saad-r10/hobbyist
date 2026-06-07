@@ -1,4 +1,4 @@
-# Folio
+# Hobbyist
 
 A fully functional hobbyist club platform — where people host and join clubs around shared media. Think Goodreads meets Letterboxd meets Discord, purpose-built for small group clubs.
 
@@ -60,7 +60,7 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173).
 
-**Demo credentials:** `alex@folio.app` / `password123`  
+**Demo credentials:** `alex@hobbyist.app` / `password123`  
 All 8 seeded users use the same password.
 
 ## Project structure
