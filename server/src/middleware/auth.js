@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hobbyist-dev-secret-change-in-prod'
 
@@ -7,7 +8,7 @@ export function signAccessToken(userId) {
 }
 
 export function signRefreshToken(userId) {
-  return jwt.sign({ sub: userId, type: 'refresh' }, JWT_SECRET, { expiresIn: '7d' })
+  return jwt.sign({ sub: userId, type: 'refresh', jti: crypto.randomUUID() }, JWT_SECRET, { expiresIn: '7d' })
 }
 
 export function verifyToken(token) {

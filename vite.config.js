@@ -9,4 +9,8 @@ export default defineConfig({
       '/api': { target: 'http://localhost:3001', changeOrigin: true }
     }
   },
+  test: {
+    environment: 'node',
+    include: ['src/__tests__/**/*.test.js'],
+  },
 })
