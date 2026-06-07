@@ -51,13 +51,10 @@ jobs:
           cache-dependency-path: server/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Generate Prisma client
-        run: npx prisma generate
-
-      - name: Push schema (SQLite)
-        run: npx prisma db push
+        run: ./node_modules/.bin/prisma generate
         env:
           DATABASE_URL: file:./prisma/ci.db
 
@@ -66,6 +63,11 @@ jobs:
         env:
           DATABASE_URL: file:./prisma/test.db
           JWT_SECRET: ci-test-secret-at-least-32-characters-long
+
+      - name: Push schema for health-check DB
+        run: ./node_modules/.bin/prisma db push
+        env:
+          DATABASE_URL: file:./prisma/ci.db
 
       - name: Verify server starts
         run: |
