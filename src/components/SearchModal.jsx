@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, X, BookOpen, Film, Mic, Gamepad2, Users } from 'lucide-react'
+import { Search, X, BookOpen, Film, Mic, Gamepad2 } from 'lucide-react'
 import { get } from '../api/client.js'
 
 const IS_DEMO = import.meta.env.VITE_DEMO_MODE === 'true'
@@ -52,7 +52,6 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
   const [query, setQuery] = useState('')
   const [results, setResults] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [cursor, setCursor] = useState(-1)
   const inputRef = useRef(null)
   const timerRef = useRef(null)
 
@@ -81,7 +80,6 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
   function handleInput(e) {
     const q = e.target.value
     setQuery(q)
-    setCursor(-1)
     clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => search(q), 300)
   }

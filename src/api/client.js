@@ -12,7 +12,7 @@ export function getAccessToken() { return _accessToken }
 async function demoApi(path, options = {}) {
   const method = options.method || 'GET'
   let body = null
-  try { body = options.body ? JSON.parse(options.body) : null } catch {}
+  try { body = options.body ? JSON.parse(options.body) : null } catch { /* non-JSON body */ }
 
   const key = method === 'GET' || method === 'DELETE' ? path : `${method} ${path}`
 

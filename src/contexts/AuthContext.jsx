@@ -14,6 +14,7 @@ export function AuthProvider({ children }) {
     if (IS_DEMO) {
       // Demo mode: restore from session-backed demo state (not hardcoded Alex Chen)
       setAccessToken('demo-token')
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUser({ ...getDemoUser() })
       setLoading(false)
       return
@@ -55,7 +56,7 @@ export function AuthProvider({ children }) {
     setAccessToken(null)
     if (IS_DEMO) {
       // Reset demo session
-      try { sessionStorage.removeItem('hobbyist-demo-v2') } catch {}
+      try { sessionStorage.removeItem('hobbyist-demo-v2') } catch { /* storage unavailable */ }
     }
     setUser(null)
   }, [])

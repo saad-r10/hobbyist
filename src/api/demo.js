@@ -76,12 +76,12 @@ function loadSession() {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY)
     if (raw) return JSON.parse(raw)
-  } catch {}
+  } catch { /* storage unavailable or corrupt */ }
   return null
 }
 
 function saveSession(state) {
-  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(state)) } catch {}
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(state)) } catch { /* storage unavailable */ }
 }
 
 function initState() {
