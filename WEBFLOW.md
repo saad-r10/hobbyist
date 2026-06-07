@@ -1,4 +1,4 @@
-# Folio — Webflow Diagram
+# Hobbyist — Webflow Diagram
 
 A comprehensive map of every screen, user journey, state transition, and interactive element in the prototype. Use this to identify gaps, friction points, and design opportunities before building out the real backend.
 
@@ -50,7 +50,7 @@ flowchart TD
 
     SHELL --> TOPNAV["Desktop NavBar ≥640px
     ─────────────────────────
-    Folio logo — amber F badge
+    Hobbyist logo — amber H badge
     6 tab buttons with icons + labels
     Active tab: amber tint + amber text
     Bell icon — amber pulse dot badge
