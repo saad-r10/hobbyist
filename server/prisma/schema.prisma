@@ -32,6 +32,8 @@ model User {
   likesGiven      PostLike[]
   progress        MemberProgress[]
   personalRatings PersonalRating[]
+  notifications       Notification[] @relation("NotificationRecipient")
+  notificationsCaused Notification[] @relation("NotificationActor")
 }
 
 model Club {
@@ -50,6 +52,7 @@ model Club {
   items        ClubItem[]
   posts        Post[]
   chatMessages ChatMessage[]
+  notifications Notification[]
 }
 
 model ClubMember {
@@ -108,6 +111,7 @@ model Post {
   user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   replies Reply[]
   likes   PostLike[]
+  notifications Notification[]
 }
 
 model Reply {
@@ -205,4 +209,24 @@ model PasswordReset {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      // recipient
+  actorId   Int?     // who triggered it
+  type      String   // post | reply | like | chat | club_join
+  clubId    Int?
+  postId    Int?
+  count     Int      @default(1) // batching, used by chat
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  club  Club? @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  post  Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
 }

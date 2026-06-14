@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator'
 import { PrismaClient } from '@prisma/client'
 import { requireAuth } from '../middleware/auth.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
+import { notifyClubJoin } from '../lib/notifications.js'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -209,6 +210,7 @@ router.post('/:id/join', requireAuth, asyncHandler(async (req, res) => {
   await prisma.activity.create({
     data: { userId: req.userId, type: 'joined_club', clubName: club.name }
   })
+  await notifyClubJoin(prisma, { clubId, actorId: req.userId })
 
   res.json({ ok: true })
 }))

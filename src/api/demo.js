@@ -125,6 +125,13 @@ function initState() {
     },
     nextId: 100,
     importedItems: [],
+    notifications: [
+      { id: 1, type: 'post', read: false, count: 1, createdAt: new Date(Date.now() - 30 * 60000).toISOString(), actor: SEED_USERS[1], message: 'Maya Patel posted in The Midnight Readers', target: { tab: 'clubs', clubId: 1, subTab: 'discussion' } },
+      { id: 2, type: 'reply', read: false, count: 1, createdAt: new Date(Date.now() - 2 * 3600000).toISOString(), actor: SEED_USERS[2], message: 'Jordan Kim replied to your post', target: { tab: 'clubs', clubId: 1, subTab: 'discussion' } },
+      { id: 3, type: 'chat', read: false, count: 3, createdAt: new Date(Date.now() - 5 * 3600000).toISOString(), actor: SEED_USERS[2], message: '3 new messages in Frame by Frame', target: { tab: 'clubs', clubId: 2, subTab: 'chat' } },
+      { id: 4, type: 'like', read: true, count: 1, createdAt: new Date(Date.now() - 26 * 3600000).toISOString(), actor: SEED_USERS[3], message: 'Sam Rivera liked your post', target: { tab: 'clubs', clubId: 1, subTab: 'discussion' } },
+      { id: 5, type: 'club_join', read: true, count: 1, createdAt: new Date(Date.now() - 2 * 86400000).toISOString(), actor: SEED_USERS[4], message: 'Priya Nair joined Deep Dive Pods', target: { tab: 'clubs', clubId: 3, subTab: 'members' } },
+    ],
   }
 }
 
@@ -315,6 +322,15 @@ export const DEMO_HANDLERS = {
     }
   },
 
+  '/notifications': async () => {
+    await delay()
+    return {
+      notifications: _state.notifications,
+      unreadCount: _state.notifications.filter(n => !n.read).length,
+      hasMore: false,
+    }
+  },
+
   '/import': async (_, body) => {
     await delay(600)
     const items = (body?.items || []).map(i => ({ ...i, id: `imp-${++_state.nextId}`, source: body.source }))
@@ -489,6 +505,26 @@ export function matchDemoHandler(method, path, body) {
   // Users by ID
   if (path.match(/^\/users\/\d+$/)) {
     return async () => SEED_USERS.find(u => u.id === Number(path.split('/')[2])) || SEED_USERS[0]
+  }
+
+  // Mark all notifications read
+  if (path === '/notifications/read-all' && method === 'POST') {
+    return async () => {
+      _state.notifications.forEach(n => { n.read = true })
+      persist()
+      return { ok: true }
+    }
+  }
+
+  // Mark single notification read
+  const notifRead = path.match(/^\/notifications\/(\d+)\/read$/)
+  if (notifRead && method === 'POST') {
+    return async () => {
+      const id = Number(notifRead[1])
+      const n = _state.notifications.find(n => n.id === id)
+      if (n) { n.read = true; persist() }
+      return { ok: true }
+    }
   }
 
   // Search

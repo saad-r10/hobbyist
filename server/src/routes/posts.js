@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator'
 import { PrismaClient } from '@prisma/client'
 import { requireAuth } from '../middleware/auth.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
+import { notifyNewPost, notifyReply, notifyLike } from '../lib/notifications.js'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -78,6 +79,8 @@ router.post('/club/:clubId', requireAuth, [
     }
   })
 
+  await notifyNewPost(prisma, { clubId, actorId: req.userId, postId: post.id })
+
   res.status(201).json({
     id: post.id,
     title: post.title,
@@ -106,6 +109,12 @@ router.post('/:id/like', requireAuth, asyncHandler(async (req, res) => {
     res.json({ liked: false })
   } else {
     await prisma.postLike.create({ data: { userId, postId } })
+
+    const post = await prisma.post.findUnique({ where: { id: postId }, select: { userId: true, clubId: true } })
+    if (post) {
+      await notifyLike(prisma, { postOwnerId: post.userId, actorId: userId, clubId: post.clubId, postId })
+    }
+
     res.json({ liked: true })
   }
 }))
@@ -122,6 +131,11 @@ router.post('/:id/replies', requireAuth, [
     data: { postId, userId: req.userId, text: req.body.text },
     include: { user: { select: { id: true, displayName: true, avatarColor: true, avatarInitials: true, username: true } } }
   })
+
+  const post = await prisma.post.findUnique({ where: { id: postId }, select: { userId: true, clubId: true } })
+  if (post) {
+    await notifyReply(prisma, { postOwnerId: post.userId, actorId: req.userId, clubId: post.clubId, postId })
+  }
 
   res.status(201).json({ id: reply.id, text: reply.text, time: 'just now', user: reply.user })
 }))
