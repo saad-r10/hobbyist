@@ -88,11 +88,10 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
   const hasResults = totalCount > 0
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4"
-      style={{ background: 'var(--overlay)', backdropFilter: 'blur(4px)' }}
+    <div className="modal-overlay flex items-start justify-center pt-16 sm:pt-24 px-4"
+      style={{ backdropFilter: 'blur(4px)' }}
       onClick={onClose}>
-      <div className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl border border-themed/10"
-        style={{ background: 'var(--surface)' }}
+      <div className="modal-panel w-full max-w-lg"
         onClick={e => e.stopPropagation()}>
 
         {/* Input */}
@@ -108,7 +107,7 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
           />
           {query && (
             <button onClick={() => { setQuery(''); setResults(null); inputRef.current?.focus() }}
-              className="text-t30 hover:text-t60 transition-colors">
+              className="modal-close -mr-1">
               <X size={16} />
             </button>
           )}

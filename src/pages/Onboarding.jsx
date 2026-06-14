@@ -156,9 +156,9 @@ export default function Onboarding() {
               {selected.length > 0 && (
                 <div className="flex flex-wrap gap-2 justify-center mb-6">
                   {selected.map(id => {
-                    const { label, accent } = INTERESTS.find(i => i.id === id)
+                    const { label } = INTERESTS.find(i => i.id === id)
                     return (
-                      <span key={id} className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: `${accent}20`, color: accent, border: `1px solid ${accent}40` }}>
+                      <span key={id} className="badge badge-accent">
                         {label}
                       </span>
                     )

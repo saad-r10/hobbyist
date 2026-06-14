@@ -3,7 +3,7 @@ import {
   BookOpen, Film, Mic, Gamepad2, Home, Compass, Trophy,
   BarChart2, User, Heart, MessageCircle, Star,
   ArrowLeft, Flame, Plus, Check, Clock, Send, LogOut,
-  Users, AlertCircle, Loader2, X, Settings, Search, Sun, Moon, TrendingUp,
+  Users, AlertCircle, Loader2, X, Settings, Search, TrendingUp,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext.jsx'
@@ -12,6 +12,7 @@ import { get, post, put } from './api/client.js'
 import ImportModal from './components/ImportModal.jsx'
 import NotificationBell from './components/NotificationBell.jsx'
 import SearchModal from './components/SearchModal.jsx'
+import Sidebar from './components/Sidebar.jsx'
 
 // ── Utility components ──────────────────────────────────────────────────
 
@@ -168,13 +169,13 @@ function SkeletonCard() {
   return (
     <div className="rounded-2xl p-4 border border-t06" style={{ background: 'var(--surface)' }}>
       <div className="flex items-start gap-3 mb-3">
-        <div className="w-9 h-9 rounded-full shimmer" />
+        <div className="w-9 h-9 skeleton-circle" />
         <div className="flex-1 space-y-2">
-          <div className="h-3.5 rounded-full w-1/2 shimmer" />
-          <div className="h-3 rounded-full w-3/4 shimmer" />
+          <div className="h-3.5 w-1/2 skeleton-text" />
+          <div className="h-3 w-3/4 skeleton-text" />
         </div>
       </div>
-      <div className="h-3 rounded-full w-1/4 shimmer" />
+      <div className="h-3 w-1/4 skeleton-text" />
     </div>
   )
 }
@@ -251,14 +252,14 @@ function CreateClubModal({ onClose, onCreated }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: 'var(--overlay)' }} onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl p-5 border border-t08" style={{ background: 'var(--surface)', color: 'var(--text)' }} onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+      <div className="modal-panel w-full max-w-md p-5" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-display text-lg font-semibold">Create a club</h3>
-          <button onClick={onClose} className="text-t40 hover:text-t70"><X size={18} /></button>
+          <button onClick={onClose} className="modal-close"><X size={18} /></button>
         </div>
 
-        {error && <p className="text-xs text-[#E87070] mb-3 bg-[#E87070]/10 rounded-lg px-3 py-2">{error}</p>}
+        {error && <p className="toast toast-error mb-3">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -310,7 +311,7 @@ function MyClubs({ onSelectClub }) {
   const { data: clubs, loading, error, refetch, setData } = useApi(() => get('/clubs'))
   const [showCreate, setShowCreate] = useState(false)
 
-  if (loading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-32 rounded-2xl shimmer" />)}</div>
+  if (loading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-32 skeleton-block" />)}</div>
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
   return (
@@ -389,7 +390,7 @@ function DiscussionTab({ clubId, accent }) {
     } catch (err) { alert(err.message) }
   }
 
-  if (loading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-24 rounded-2xl shimmer" />)}</div>
+  if (loading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-24 skeleton-block" />)}</div>
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
   return (
@@ -557,7 +558,7 @@ function MembersTab({ members, currentItem, accent }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline justify-between">
               <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>{m.user?.displayName}</span>
-              {m.role === 'admin' && <span className="text-xs rounded-full px-2 py-0.5" style={{ background: `${accent}20`, color: accent }}>Admin</span>}
+              {m.role === 'admin' && <span className="badge badge-accent">Admin</span>}
             </div>
             {currentItem && (
               <>
@@ -826,9 +827,8 @@ function DiscoverClubCard({ club, onJoin }) {
           </div>
         </div>
         {joined ? (
-          <span className="text-xs px-2.5 py-1 rounded-full font-medium shrink-0"
-            style={{ background: 'var(--success-10)', color: 'var(--success)' }}>
-            <Check size={11} className="inline mr-1" />Joined
+          <span className="badge badge-success shrink-0">
+            <Check size={11} />Joined
           </span>
         ) : (
           <button onClick={handleJoin} disabled={joining}
@@ -899,8 +899,8 @@ function Discover({ onSelectClub: _onSelectClub }) {
 
   if (loading) return (
     <div className="space-y-4">
-      <div className="h-12 rounded-xl shimmer" />
-      {[0,1,2].map(i => <div key={i} className="h-36 rounded-2xl shimmer" />)}
+      <div className="h-12 skeleton-block" />
+      {[0,1,2].map(i => <div key={i} className="h-36 skeleton-block" />)}
     </div>
   )
   if (error) return <ErrorState message={error} onRetry={refetch} />
@@ -1049,7 +1049,7 @@ function Leaderboard() {
   const [period, setPeriod] = useState('month')
   const { data, loading, error, refetch } = useApi(() => get(`/leaderboard?period=${period}`), [period])
 
-  if (loading) return <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-14 rounded-2xl shimmer" />)}</div>
+  if (loading) return <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-14 skeleton-block" />)}</div>
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
   const { entries = [], myRank, myScore } = data || {}
@@ -1127,7 +1127,7 @@ const LEVEL_COLORS = ['var(--border-06)', 'rgba(122,158,126,0.3)', 'rgba(122,158
 function Analytics() {
   const { data, loading, error, refetch } = useApi(() => get('/analytics'))
 
-  if (loading) return <div className="space-y-4">{[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-2xl shimmer" />)}</div>
+  if (loading) return <div className="space-y-4">{[...Array(4)].map((_, i) => <div key={i} className="h-24 skeleton-block" />)}</div>
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
   const { summary, monthly, types, heatmap, recentRatings } = data || {}
@@ -1278,7 +1278,7 @@ function Profile({ onLogout }) {
   if (error) return <ErrorState message={error} />
 
   const profile = me || user
-  const INTEREST_MAP = { book: { label: 'Books', color: '#C47D5A' }, film: { label: 'Films', color: '#6B8DD6' }, podcast: { label: 'Podcasts', color: '#4AADAB' }, game: { label: 'Games', color: '#9B6DB5' } }
+  const INTEREST_MAP = { book: { label: 'Books' }, film: { label: 'Films' }, podcast: { label: 'Podcasts' }, game: { label: 'Games' } }
   const importSources = analytics?.importSources || {}
 
   return (
@@ -1335,10 +1335,9 @@ function Profile({ onLogout }) {
       {profile?.interests?.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {profile.interests.map(id => {
-            const info = INTEREST_MAP[id] || { label: id, color: '#E8A020' }
+            const info = INTEREST_MAP[id] || { label: id }
             return (
-              <span key={id} className="rounded-full px-3 py-1 text-xs font-medium"
-                style={{ background: `${info.color}20`, color: info.color, border: `1px solid ${info.color}40` }}>
+              <span key={id} className="badge badge-accent">
                 {info.label}
               </span>
             )
@@ -1472,6 +1471,13 @@ export default function App() {
   const [selectedClub, setSelectedClub] = useState(null)
   const [showSearch, setShowSearch] = useState(false)
   const [pendingSubTab, setPendingSubTab] = useState(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem('hobbyist-sidebar-collapsed') === 'true' } catch { return false }
+  })
+
+  useEffect(() => {
+    try { localStorage.setItem('hobbyist-sidebar-collapsed', String(sidebarCollapsed)) } catch { /* ignore */ }
+  }, [sidebarCollapsed])
 
   function handleLogout() {
     logout()
@@ -1495,79 +1501,62 @@ export default function App() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <DemoBanner />
-      {/* Desktop top nav */}
-      <nav className="hidden sm:flex sticky top-0 left-0 right-0 z-40 items-center justify-between px-6 h-14 border-b border-t06" style={{ background: 'var(--nav-bg)', backdropFilter: 'blur(12px)' }}>
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#E8A020' }}>
-            <BookOpen size={14} style={{ color: 'var(--bg)' }} />
-          </div>
-          <span className="font-display text-base font-semibold">Hobbyist</span>
-        </div>
-        <div className="flex items-center gap-1">
+      <div className="lg:flex">
+        <Sidebar
+          tabs={TABS}
+          activeTab={tab}
+          onTabChange={handleTabChange}
+          onOpenSearch={() => setShowSearch(true)}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
+          user={user}
+          onNotificationNavigate={handleNotificationNavigate}
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={() => setSidebarCollapsed(c => !c)}
+        />
+
+        {/* Mobile/tablet bottom nav */}
+        <nav className="mobile-nav lg:hidden fixed bottom-0 left-0 right-0 z-40 flex border-t border-t06"
+          style={{ background: 'var(--nav-bg-mobile)', backdropFilter: 'blur(12px)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="mobile-nav-indicator" style={{ width: `${100 / TABS.length}%`, transform: `translateX(${TABS.findIndex(t => t.id === tab) * 100}%)` }} />
           {TABS.map(({ id, label, Icon }) => (
             <button key={id} onClick={() => handleTabChange(id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
-              style={tab === id ? { background: 'var(--accent-12)', color: '#E8A020' } : { color: 'var(--text-50)' }}>
-              <Icon size={14} />{label}
+              className="mobile-nav-link flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[44px] relative z-10"
+              style={{ color: tab === id ? '#E8A020' : 'var(--text-35)' }}>
+              <span className="mobile-nav-icon-wrap flex flex-col items-center gap-0.5">
+                <Icon size={20} />
+                <span className="text-[10px] font-medium">{label}</span>
+              </span>
             </button>
           ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowSearch(true)}
-            className="rounded-lg p-1.5 transition-colors"
-            style={{ background: 'var(--border)', color: 'var(--text-dim)' }} title="Search (/)">
-            <Search size={16} />
-          </button>
-          <NotificationBell onNavigate={handleNotificationNavigate} />
-          <button onClick={toggleTheme}
-            className="rounded-lg p-1.5 transition-colors"
-            style={{ background: 'var(--border)', color: 'var(--text-dim)' }}
-            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
-            {isDark ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-          <button onClick={() => handleTabChange('profile')}
-            className="rounded-full ring-2 ring-transparent hover:ring-[#E8A020]/40 transition-all"
-            title="Your profile">
-            <Avatar user={user} size={30} />
-          </button>
-        </div>
-      </nav>
+        </nav>
 
-      {/* Mobile bottom nav */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 flex border-t border-t06" style={{ background: 'var(--nav-bg-mobile)', backdropFilter: 'blur(12px)' }}>
-        {TABS.map(({ id, label, Icon }) => (
-          <button key={id} onClick={() => handleTabChange(id)}
-            className="flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-colors"
-            style={{ color: tab === id ? '#E8A020' : 'var(--text-35)' }}>
-            <Icon size={20} />
-            <span className="text-[10px] font-medium">{label}</span>
-          </button>
-        ))}
-      </nav>
+        {/* Main content */}
+        <main className="flex-1 min-w-0" key={tab}>
+          <div className="pt-4 pb-24 lg:pb-8 px-4 max-w-2xl mx-auto">
+            <div className="fade-up">
+              {tab !== 'clubs' || !selectedClub ? (
+                <div className="flex items-center justify-between mb-4">
+                  <h1 className="font-display text-fs-3xl font-bold">{TAB_TITLES[tab]}</h1>
+                  <div className="lg:hidden">
+                    <NotificationBell onNavigate={handleNotificationNavigate} />
+                  </div>
+                </div>
+              ) : null}
 
-      {/* Main content */}
-      <main className="pt-4 sm:pt-4 pb-24 sm:pb-8 px-4 max-w-2xl mx-auto" key={tab}>
-        <div className="fade-up">
-          {tab !== 'clubs' || !selectedClub ? (
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="font-display text-fs-3xl font-bold">{TAB_TITLES[tab]}</h1>
-              <div className="sm:hidden">
-                <NotificationBell onNavigate={handleNotificationNavigate} />
-              </div>
+              {tab === 'feed' && <GlobalFeed />}
+              {tab === 'clubs' && !selectedClub && <MyClubs onSelectClub={setSelectedClub} />}
+              {tab === 'clubs' && selectedClub && (
+                <ClubDetail clubId={selectedClub} currentUser={user} onBack={() => setSelectedClub(null)} pendingSubTab={pendingSubTab} />
+              )}
+              {tab === 'discover' && <Discover onSelectClub={(id) => { handleTabChange('clubs'); setSelectedClub(id) }} />}
+              {tab === 'ranks' && <Leaderboard />}
+              {tab === 'stats' && <Analytics />}
+              {tab === 'profile' && <Profile onLogout={handleLogout} />}
             </div>
-          ) : null}
-
-          {tab === 'feed' && <GlobalFeed />}
-          {tab === 'clubs' && !selectedClub && <MyClubs onSelectClub={setSelectedClub} />}
-          {tab === 'clubs' && selectedClub && (
-            <ClubDetail clubId={selectedClub} currentUser={user} onBack={() => setSelectedClub(null)} pendingSubTab={pendingSubTab} />
-          )}
-          {tab === 'discover' && <Discover onSelectClub={(id) => { handleTabChange('clubs'); setSelectedClub(id) }} />}
-          {tab === 'ranks' && <Leaderboard />}
-          {tab === 'stats' && <Analytics />}
-          {tab === 'profile' && <Profile onLogout={handleLogout} />}
-        </div>
-      </main>
+          </div>
+        </main>
+      </div>
 
       {showSearch && (
         <SearchModal
