@@ -1516,13 +1516,17 @@ export default function App() {
         />
 
         {/* Mobile/tablet bottom nav */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex border-t border-t06" style={{ background: 'var(--nav-bg-mobile)', backdropFilter: 'blur(12px)' }}>
+        <nav className="mobile-nav lg:hidden fixed bottom-0 left-0 right-0 z-40 flex border-t border-t06"
+          style={{ background: 'var(--nav-bg-mobile)', backdropFilter: 'blur(12px)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="mobile-nav-indicator" style={{ width: `${100 / TABS.length}%`, transform: `translateX(${TABS.findIndex(t => t.id === tab) * 100}%)` }} />
           {TABS.map(({ id, label, Icon }) => (
             <button key={id} onClick={() => handleTabChange(id)}
-              className="flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-colors"
+              className="mobile-nav-link flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[44px] relative z-10"
               style={{ color: tab === id ? '#E8A020' : 'var(--text-35)' }}>
-              <Icon size={20} />
-              <span className="text-[10px] font-medium">{label}</span>
+              <span className="mobile-nav-icon-wrap flex flex-col items-center gap-0.5">
+                <Icon size={20} />
+                <span className="text-[10px] font-medium">{label}</span>
+              </span>
             </button>
           ))}
         </nav>

@@ -401,6 +401,30 @@ body {
   background: var(--surface-06);
 }
 
+/* ── Mobile bottom nav ──────────────────────────────────── */
+.mobile-nav-indicator {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 0;
+  border-radius: 0.75rem;
+  background: var(--accent-12);
+  transition: transform var(--duration-base) var(--ease-spring);
+  pointer-events: none;
+}
+.mobile-nav-link {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+.mobile-nav-icon-wrap {
+  transition: transform var(--duration-fast) var(--ease-spring);
+}
+.mobile-nav-link:active .mobile-nav-icon-wrap {
+  transform: scale(0.88);
+}
+
 /* ── Focus ring ─────────────────────────────────────────── */
 .focus-ring:focus-visible,
 .btn-primary:focus-visible,
