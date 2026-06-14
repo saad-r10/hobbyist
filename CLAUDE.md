@@ -231,16 +231,51 @@ Required server variables:
 
 ---
 
-## Open Issues (as of 2026-06-01)
+## Open Issues (as of 2026-06-14)
 
 | # | Title | Priority |
 |---|-------|----------|
-| [#1](https://github.com/saad-r10/hobbyist/issues/1) | Rebranding: Folio → Hobbyist | High |
-| [#2](https://github.com/saad-r10/hobbyist/issues/2) | Bug: profile avatar not clickable | High |
-| [#3](https://github.com/saad-r10/hobbyist/issues/3) | Global search system | High |
-| [#4](https://github.com/saad-r10/hobbyist/issues/4) | Light/dark theme system | Medium |
-| [#5](https://github.com/saad-r10/hobbyist/issues/5) | Rate limiting & security hardening | High |
-| [#6](https://github.com/saad-r10/hobbyist/issues/6) | .env.example & environment docs | High |
-| [#7](https://github.com/saad-r10/hobbyist/issues/7) | Testing infrastructure | Medium |
-| [#8](https://github.com/saad-r10/hobbyist/issues/8) | GitHub Actions CI | Medium |
+| [#8](https://github.com/saad-r10/hobbyist/issues/8) | Infrastructure: GitHub Actions CI | Medium — likely stale/duplicate of closed #18/#19, verify and close if so |
 | [#9](https://github.com/saad-r10/hobbyist/issues/9) | Notification system | Low |
+
+#1-7, #11-15, #18 are closed/shipped.
+
+## UI Revamp & Feature Roadmap (added 2026-06-14)
+
+A staged plan to bring the UI to a more polished, "next level" visual standard (inspired by onlook.com) and round out the feature set. Work roughly in phase order — later phases depend on the design-system primitives from Phase A.
+
+**Phase A — Design System 2.0** (foundation)
+- [#24](https://github.com/saad-r10/hobbyist/issues/24) Expand typography scale + fluid heading sizes
+- [#25](https://github.com/saad-r10/hobbyist/issues/25) Motion and elevation token system
+- [#31](https://github.com/saad-r10/hobbyist/issues/31) Secondary accent color + gradient tokens
+- [#26](https://github.com/saad-r10/hobbyist/issues/26) Rebuild core component primitives
+
+**Phase B — Navigation & Layout**
+- [#27](https://github.com/saad-r10/hobbyist/issues/27) Desktop sidebar navigation
+- [#28](https://github.com/saad-r10/hobbyist/issues/28) Mobile bottom nav polish
+- [#29](https://github.com/saad-r10/hobbyist/issues/29) Route-level page transitions
+
+**Phase C — Per-tab redesigns**
+- [#30](https://github.com/saad-r10/hobbyist/issues/30) Feed redesign + inline reactions
+- [#32](https://github.com/saad-r10/hobbyist/issues/32) Club Detail hero + chat bubble refresh
+- [#33](https://github.com/saad-r10/hobbyist/issues/33) Discover featured carousel
+- [#34](https://github.com/saad-r10/hobbyist/issues/34) Leaderboard animated podium
+- [#35](https://github.com/saad-r10/hobbyist/issues/35) Analytics charts + yearly wrap-up
+- [#36](https://github.com/saad-r10/hobbyist/issues/36) Profile banner + import history
+
+**Phase D — Auth & Onboarding**
+- [#37](https://github.com/saad-r10/hobbyist/issues/37) Redesign Login/Register/Onboarding/ResetPassword
+
+**Phase E — New features**
+- [#38](https://github.com/saad-r10/hobbyist/issues/38) Real cover art (Open Library, TMDB, IGDB)
+- [#39](https://github.com/saad-r10/hobbyist/issues/39) Emoji reactions on posts/messages
+- [#40](https://github.com/saad-r10/hobbyist/issues/40) Real-time chat/feed via WebSockets
+- [#41](https://github.com/saad-r10/hobbyist/issues/41) Club events/reading schedules
+- [#42](https://github.com/saad-r10/hobbyist/issues/42) Achievements/badges system
+- [#43](https://github.com/saad-r10/hobbyist/issues/43) Public club pages for discovery
+- [#44](https://github.com/saad-r10/hobbyist/issues/44) PWA support
+
+**Phase F — Polish pass**
+- [#45](https://github.com/saad-r10/hobbyist/issues/45) Micro-interaction sweep
+- [#46](https://github.com/saad-r10/hobbyist/issues/46) Empty/loading/error state audit
+- [#47](https://github.com/saad-r10/hobbyist/issues/47) Accessibility audit
