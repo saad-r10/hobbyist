@@ -168,13 +168,13 @@ function SkeletonCard() {
   return (
     <div className="rounded-2xl p-4 border border-t06" style={{ background: 'var(--surface)' }}>
       <div className="flex items-start gap-3 mb-3">
-        <div className="w-9 h-9 rounded-full shimmer" />
+        <div className="w-9 h-9 skeleton-circle" />
         <div className="flex-1 space-y-2">
-          <div className="h-3.5 rounded-full w-1/2 shimmer" />
-          <div className="h-3 rounded-full w-3/4 shimmer" />
+          <div className="h-3.5 w-1/2 skeleton-text" />
+          <div className="h-3 w-3/4 skeleton-text" />
         </div>
       </div>
-      <div className="h-3 rounded-full w-1/4 shimmer" />
+      <div className="h-3 w-1/4 skeleton-text" />
     </div>
   )
 }
@@ -251,14 +251,14 @@ function CreateClubModal({ onClose, onCreated }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: 'var(--overlay)' }} onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl p-5 border border-t08" style={{ background: 'var(--surface)', color: 'var(--text)' }} onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+      <div className="modal-panel w-full max-w-md p-5" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-display text-lg font-semibold">Create a club</h3>
-          <button onClick={onClose} className="text-t40 hover:text-t70"><X size={18} /></button>
+          <button onClick={onClose} className="modal-close"><X size={18} /></button>
         </div>
 
-        {error && <p className="text-xs text-[#E87070] mb-3 bg-[#E87070]/10 rounded-lg px-3 py-2">{error}</p>}
+        {error && <p className="toast toast-error mb-3">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -310,7 +310,7 @@ function MyClubs({ onSelectClub }) {
   const { data: clubs, loading, error, refetch, setData } = useApi(() => get('/clubs'))
   const [showCreate, setShowCreate] = useState(false)
 
-  if (loading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-32 rounded-2xl shimmer" />)}</div>
+  if (loading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-32 skeleton-block" />)}</div>
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
   return (
@@ -389,7 +389,7 @@ function DiscussionTab({ clubId, accent }) {
     } catch (err) { alert(err.message) }
   }
 
-  if (loading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-24 rounded-2xl shimmer" />)}</div>
+  if (loading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-24 skeleton-block" />)}</div>
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
   return (
@@ -557,7 +557,7 @@ function MembersTab({ members, currentItem, accent }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline justify-between">
               <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>{m.user?.displayName}</span>
-              {m.role === 'admin' && <span className="text-xs rounded-full px-2 py-0.5" style={{ background: `${accent}20`, color: accent }}>Admin</span>}
+              {m.role === 'admin' && <span className="badge badge-accent">Admin</span>}
             </div>
             {currentItem && (
               <>
@@ -826,9 +826,8 @@ function DiscoverClubCard({ club, onJoin }) {
           </div>
         </div>
         {joined ? (
-          <span className="text-xs px-2.5 py-1 rounded-full font-medium shrink-0"
-            style={{ background: 'var(--success-10)', color: 'var(--success)' }}>
-            <Check size={11} className="inline mr-1" />Joined
+          <span className="badge badge-success shrink-0">
+            <Check size={11} />Joined
           </span>
         ) : (
           <button onClick={handleJoin} disabled={joining}
@@ -899,8 +898,8 @@ function Discover({ onSelectClub: _onSelectClub }) {
 
   if (loading) return (
     <div className="space-y-4">
-      <div className="h-12 rounded-xl shimmer" />
-      {[0,1,2].map(i => <div key={i} className="h-36 rounded-2xl shimmer" />)}
+      <div className="h-12 skeleton-block" />
+      {[0,1,2].map(i => <div key={i} className="h-36 skeleton-block" />)}
     </div>
   )
   if (error) return <ErrorState message={error} onRetry={refetch} />
@@ -1049,7 +1048,7 @@ function Leaderboard() {
   const [period, setPeriod] = useState('month')
   const { data, loading, error, refetch } = useApi(() => get(`/leaderboard?period=${period}`), [period])
 
-  if (loading) return <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-14 rounded-2xl shimmer" />)}</div>
+  if (loading) return <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-14 skeleton-block" />)}</div>
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
   const { entries = [], myRank, myScore } = data || {}
@@ -1127,7 +1126,7 @@ const LEVEL_COLORS = ['var(--border-06)', 'rgba(122,158,126,0.3)', 'rgba(122,158
 function Analytics() {
   const { data, loading, error, refetch } = useApi(() => get('/analytics'))
 
-  if (loading) return <div className="space-y-4">{[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-2xl shimmer" />)}</div>
+  if (loading) return <div className="space-y-4">{[...Array(4)].map((_, i) => <div key={i} className="h-24 skeleton-block" />)}</div>
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
   const { summary, monthly, types, heatmap, recentRatings } = data || {}
@@ -1278,7 +1277,7 @@ function Profile({ onLogout }) {
   if (error) return <ErrorState message={error} />
 
   const profile = me || user
-  const INTEREST_MAP = { book: { label: 'Books', color: '#C47D5A' }, film: { label: 'Films', color: '#6B8DD6' }, podcast: { label: 'Podcasts', color: '#4AADAB' }, game: { label: 'Games', color: '#9B6DB5' } }
+  const INTEREST_MAP = { book: { label: 'Books' }, film: { label: 'Films' }, podcast: { label: 'Podcasts' }, game: { label: 'Games' } }
   const importSources = analytics?.importSources || {}
 
   return (
@@ -1335,10 +1334,9 @@ function Profile({ onLogout }) {
       {profile?.interests?.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {profile.interests.map(id => {
-            const info = INTEREST_MAP[id] || { label: id, color: '#E8A020' }
+            const info = INTEREST_MAP[id] || { label: id }
             return (
-              <span key={id} className="rounded-full px-3 py-1 text-xs font-medium"
-                style={{ background: `${info.color}20`, color: info.color, border: `1px solid ${info.color}40` }}>
+              <span key={id} className="badge badge-accent">
                 {info.label}
               </span>
             )
