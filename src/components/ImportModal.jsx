@@ -92,8 +92,8 @@ export default function ImportModal({ onClose, onImported }) {
   const withDate = preview?.items?.filter(i => i.consumedAt).length ?? 0
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: 'var(--overlay)' }} onClick={onClose}>
-      <div className="w-full max-w-lg rounded-2xl border border-t08 overflow-hidden" style={{ background: 'var(--surface)', color: 'var(--text)' }} onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+      <div className="modal-panel w-full max-w-lg" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-t08">
@@ -101,7 +101,7 @@ export default function ImportModal({ onClose, onImported }) {
             <h3 className="font-display text-lg font-semibold">Import your history</h3>
             <p className="text-xs text-t40 mt-0.5">Bring in ratings from other platforms</p>
           </div>
-          <button onClick={onClose} className="text-t40 hover:text-t70 transition-colors"><X size={18} /></button>
+          <button onClick={onClose} className="modal-close"><X size={18} /></button>
         </div>
 
         <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto no-scrollbar">
