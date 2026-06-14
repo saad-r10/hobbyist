@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator'
 import { PrismaClient } from '@prisma/client'
 import { requireAuth } from '../middleware/auth.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
+import { notifyChatMessage } from '../lib/notifications.js'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -62,6 +63,8 @@ router.post('/:clubId', requireAuth, [
     data: { clubId, userId: req.userId, text: req.body.text },
     include: { user: { select: { id: true, displayName: true, avatarColor: true, avatarInitials: true, username: true } } }
   })
+
+  await notifyChatMessage(prisma, { clubId, actorId: req.userId })
 
   res.status(201).json({
     id: msg.id,

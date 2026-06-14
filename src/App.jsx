@@ -10,6 +10,7 @@ import { useAuth } from './contexts/AuthContext.jsx'
 import { useTheme } from './contexts/ThemeContext.jsx'
 import { get, post, put } from './api/client.js'
 import ImportModal from './components/ImportModal.jsx'
+import NotificationBell from './components/NotificationBell.jsx'
 import SearchModal from './components/SearchModal.jsx'
 
 // ── Utility components ──────────────────────────────────────────────────
@@ -681,12 +682,17 @@ function RateModal({ clubId, itemTitle, onClose, onRated }) {
   )
 }
 
-function ClubDetail({ clubId, currentUser, onBack }) {
+function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
   const { data: club, loading, error, refetch } = useApi(() => get(`/clubs/${clubId}`), [clubId])
   const [subTab, setSubTab] = useState('discussion')
   const [showAddItem, setShowAddItem] = useState(false)
   const [showRate, setShowRate] = useState(false)
   const [progress, setProgress] = useState(null)
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (pendingSubTab) setSubTab(pendingSubTab.subTab)
+  }, [pendingSubTab])
 
   const accent = club?.accentColor || '#E8A020'
   const isAdmin = club?.myRole === 'admin'
@@ -1465,6 +1471,7 @@ export default function App() {
   const [tab, setTab] = useState('feed')
   const [selectedClub, setSelectedClub] = useState(null)
   const [showSearch, setShowSearch] = useState(false)
+  const [pendingSubTab, setPendingSubTab] = useState(null)
 
   function handleLogout() {
     logout()
@@ -1474,6 +1481,13 @@ export default function App() {
   function handleTabChange(id) {
     setTab(id)
     if (id !== 'clubs') setSelectedClub(null)
+  }
+
+  function handleNotificationNavigate(target) {
+    if (!target) return
+    setTab(target.tab)
+    setSelectedClub(target.clubId)
+    setPendingSubTab({ subTab: target.subTab, nonce: Date.now() })
   }
 
   const TAB_TITLES = { feed: 'Feed', clubs: 'My Clubs', discover: 'Discover', ranks: 'Leaderboard', stats: 'Analytics', profile: 'Profile' }
@@ -1504,6 +1518,7 @@ export default function App() {
             style={{ background: 'var(--border)', color: 'var(--text-dim)' }} title="Search (/)">
             <Search size={16} />
           </button>
+          <NotificationBell onNavigate={handleNotificationNavigate} />
           <button onClick={toggleTheme}
             className="rounded-lg p-1.5 transition-colors"
             style={{ background: 'var(--border)', color: 'var(--text-dim)' }}
@@ -1534,13 +1549,18 @@ export default function App() {
       <main className="pt-4 sm:pt-4 pb-24 sm:pb-8 px-4 max-w-2xl mx-auto" key={tab}>
         <div className="fade-up">
           {tab !== 'clubs' || !selectedClub ? (
-            <h1 className="font-display text-xl font-semibold mb-4">{TAB_TITLES[tab]}</h1>
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="font-display text-xl font-semibold">{TAB_TITLES[tab]}</h1>
+              <div className="sm:hidden">
+                <NotificationBell onNavigate={handleNotificationNavigate} />
+              </div>
+            </div>
           ) : null}
 
           {tab === 'feed' && <GlobalFeed />}
           {tab === 'clubs' && !selectedClub && <MyClubs onSelectClub={setSelectedClub} />}
           {tab === 'clubs' && selectedClub && (
-            <ClubDetail clubId={selectedClub} currentUser={user} onBack={() => setSelectedClub(null)} />
+            <ClubDetail clubId={selectedClub} currentUser={user} onBack={() => setSelectedClub(null)} pendingSubTab={pendingSubTab} />
           )}
           {tab === 'discover' && <Discover onSelectClub={(id) => { handleTabChange('clubs'); setSelectedClub(id) }} />}
           {tab === 'ranks' && <Leaderboard />}
