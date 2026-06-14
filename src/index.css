@@ -51,6 +51,12 @@
   --success-40:      rgba(122,158,126,0.40);
   --shimmer-a:       #162030;
   --shimmer-b:       #1e2d40;
+  --shadow-sm:       0 1px 2px rgba(0,0,0,0.24);
+  --shadow-md:       0 4px 12px rgba(0,0,0,0.32);
+  --shadow-lg:       0 12px 32px rgba(0,0,0,0.45);
+  --elevation-1:     var(--shadow-sm);
+  --elevation-2:     var(--shadow-md), 0 1px 1px rgba(0,0,0,0.20);
+  --elevation-3:     var(--shadow-lg), 0 2px 4px rgba(0,0,0,0.30);
   color-scheme: dark;
 }
 
@@ -102,6 +108,12 @@
   --success-40:      rgba(46,125,50,0.40);
   --shimmer-a:       #EDE0C4;
   --shimmer-b:       #E2D0A8;
+  --shadow-sm:       0 1px 2px rgba(44,24,16,0.06);
+  --shadow-md:       0 4px 12px rgba(44,24,16,0.10);
+  --shadow-lg:       0 12px 32px rgba(44,24,16,0.16);
+  --elevation-1:     var(--shadow-sm);
+  --elevation-2:     var(--shadow-md), 0 1px 1px rgba(44,24,16,0.04);
+  --elevation-3:     var(--shadow-lg), 0 2px 6px rgba(44,24,16,0.08);
   color-scheme: light;
 }
 
@@ -119,6 +131,13 @@
   --fs-3xl:  clamp(2rem, 1.7rem + 2vw, 2.75rem);          /* 32-44px — page titles */
   --fs-4xl:  clamp(2.5rem, 2rem + 3vw, 3.5rem);           /* 40-56px — hero headings */
   --fs-5xl:  clamp(3rem, 2.3rem + 4.5vw, 4.5rem);         /* 48-72px — display/landing */
+
+  /* Motion */
+  --ease-out:        cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast:   120ms;
+  --duration-base:   220ms;
+  --duration-slow:   1.8s;
 }
 
 * { box-sizing: border-box; }
@@ -142,18 +161,18 @@ body {
 .shimmer {
   background: linear-gradient(90deg, var(--shimmer-a) 0%, var(--shimmer-b) 50%, var(--shimmer-a) 100%);
   background-size: 400px 100%;
-  animation: shimmer 1.6s infinite linear;
+  animation: shimmer var(--duration-slow) infinite linear;
 }
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.fade-up { animation: fadeUp 0.22s ease forwards; }
+.fade-up { animation: fadeUp var(--duration-base) var(--ease-out) forwards; }
 @keyframes pulseDot {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.35; }
 }
-.pulse-dot { animation: pulseDot 1.8s ease-in-out infinite; }
+.pulse-dot { animation: pulseDot var(--duration-slow) ease-in-out infinite; }
 
 /* ── Scrollbars ─────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -195,6 +214,7 @@ body {
   .border-themed  { border-color: var(--border); }
   /* Card shorthand */
   .card           { background-color: var(--surface); border: 1px solid var(--border-06); border-radius: 1rem; }
+  .card-elevated  { background-color: var(--surface); border: 1px solid var(--border-06); border-radius: 1rem; box-shadow: var(--elevation-3); }
   /* Semantic colors */
   .bg-danger-10   { background-color: var(--danger-10); }
   .bg-success-10  { background-color: var(--success-10); }

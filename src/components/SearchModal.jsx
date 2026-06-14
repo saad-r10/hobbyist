@@ -91,8 +91,7 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4"
       style={{ background: 'var(--overlay)', backdropFilter: 'blur(4px)' }}
       onClick={onClose}>
-      <div className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl border border-themed/10"
-        style={{ background: 'var(--surface)' }}
+      <div className="w-full max-w-lg rounded-2xl overflow-hidden card-elevated"
         onClick={e => e.stopPropagation()}>
 
         {/* Input */}
