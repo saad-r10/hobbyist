@@ -316,7 +316,7 @@ function MyClubs({ onSelectClub }) {
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-display text-lg font-semibold">Your clubs</h2>
+        <h2 className="font-display text-fs-xl font-semibold">Your clubs</h2>
         <button onClick={() => setShowCreate(true)}
           className="flex items-center gap-1.5 text-xs font-medium rounded-lg px-3 py-1.5 transition-colors"
           style={{ background: 'var(--accent-12)', color: '#E8A020' }}>
@@ -718,9 +718,9 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
       {/* Header */}
       <div className="rounded-2xl p-4 mb-4 border border-t06" style={{ background: club?.bgColor || 'var(--surface)' }}>
         <div className="flex items-start justify-between mb-3">
-          <div>
+          <div className="min-w-0">
             <div className="text-2xl mb-1">{club?.emoji}</div>
-            <h2 className="font-display text-xl font-semibold" style={{ color: 'var(--text)' }}>{club?.name}</h2>
+            <h2 className="font-display text-fs-2xl font-bold truncate" style={{ color: 'var(--text)' }}>{club?.name}</h2>
             <p className="text-xs text-t40 mt-0.5">{club?.memberCount} members · {club?.type}</p>
           </div>
           {isAdmin && (
@@ -1288,7 +1288,7 @@ function Profile({ onLogout }) {
         <div className="flex items-start gap-4 mb-4">
           <Avatar user={profile} size={56} />
           <div className="flex-1 min-w-0">
-            <h2 className="font-display text-xl font-semibold" style={{ color: 'var(--text)' }}>{profile?.displayName}</h2>
+            <h2 className="font-display text-fs-2xl font-bold truncate" style={{ color: 'var(--text)' }}>{profile?.displayName}</h2>
             <p className="text-sm text-t40">@{profile?.username}</p>
             {profile?.bio && <p className="text-sm text-t60 mt-1.5 leading-relaxed">{profile.bio}</p>}
           </div>
@@ -1550,7 +1550,7 @@ export default function App() {
         <div className="fade-up">
           {tab !== 'clubs' || !selectedClub ? (
             <div className="flex items-center justify-between mb-4">
-              <h1 className="font-display text-xl font-semibold">{TAB_TITLES[tab]}</h1>
+              <h1 className="font-display text-fs-3xl font-bold">{TAB_TITLES[tab]}</h1>
               <div className="sm:hidden">
                 <NotificationBell onNavigate={handleNotificationNavigate} />
               </div>
