@@ -385,6 +385,22 @@ body {
 .skeleton-circle { border-radius: 50%; }
 .skeleton-block  { border-radius: 1rem; }
 
+/* ── Sidebar ────────────────────────────────────────────── */
+.sidebar {
+  transition: width var(--duration-base) var(--ease-out);
+}
+.sidebar-link {
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.sidebar-link:hover {
+  background: var(--surface-06);
+}
+
 /* ── Focus ring ─────────────────────────────────────────── */
 .focus-ring:focus-visible,
 .btn-primary:focus-visible,

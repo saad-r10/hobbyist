@@ -3,7 +3,7 @@ import {
   BookOpen, Film, Mic, Gamepad2, Home, Compass, Trophy,
   BarChart2, User, Heart, MessageCircle, Star,
   ArrowLeft, Flame, Plus, Check, Clock, Send, LogOut,
-  Users, AlertCircle, Loader2, X, Settings, Search, Sun, Moon, TrendingUp,
+  Users, AlertCircle, Loader2, X, Settings, Search, TrendingUp,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext.jsx'
@@ -12,6 +12,7 @@ import { get, post, put } from './api/client.js'
 import ImportModal from './components/ImportModal.jsx'
 import NotificationBell from './components/NotificationBell.jsx'
 import SearchModal from './components/SearchModal.jsx'
+import Sidebar from './components/Sidebar.jsx'
 
 // ── Utility components ──────────────────────────────────────────────────
 
@@ -1470,6 +1471,13 @@ export default function App() {
   const [selectedClub, setSelectedClub] = useState(null)
   const [showSearch, setShowSearch] = useState(false)
   const [pendingSubTab, setPendingSubTab] = useState(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem('hobbyist-sidebar-collapsed') === 'true' } catch { return false }
+  })
+
+  useEffect(() => {
+    try { localStorage.setItem('hobbyist-sidebar-collapsed', String(sidebarCollapsed)) } catch { /* ignore */ }
+  }, [sidebarCollapsed])
 
   function handleLogout() {
     logout()
@@ -1493,79 +1501,58 @@ export default function App() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <DemoBanner />
-      {/* Desktop top nav */}
-      <nav className="hidden sm:flex sticky top-0 left-0 right-0 z-40 items-center justify-between px-6 h-14 border-b border-t06" style={{ background: 'var(--nav-bg)', backdropFilter: 'blur(12px)' }}>
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#E8A020' }}>
-            <BookOpen size={14} style={{ color: 'var(--bg)' }} />
-          </div>
-          <span className="font-display text-base font-semibold">Hobbyist</span>
-        </div>
-        <div className="flex items-center gap-1">
+      <div className="lg:flex">
+        <Sidebar
+          tabs={TABS}
+          activeTab={tab}
+          onTabChange={handleTabChange}
+          onOpenSearch={() => setShowSearch(true)}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
+          user={user}
+          onNotificationNavigate={handleNotificationNavigate}
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={() => setSidebarCollapsed(c => !c)}
+        />
+
+        {/* Mobile/tablet bottom nav */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex border-t border-t06" style={{ background: 'var(--nav-bg-mobile)', backdropFilter: 'blur(12px)' }}>
           {TABS.map(({ id, label, Icon }) => (
             <button key={id} onClick={() => handleTabChange(id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
-              style={tab === id ? { background: 'var(--accent-12)', color: '#E8A020' } : { color: 'var(--text-50)' }}>
-              <Icon size={14} />{label}
+              className="flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-colors"
+              style={{ color: tab === id ? '#E8A020' : 'var(--text-35)' }}>
+              <Icon size={20} />
+              <span className="text-[10px] font-medium">{label}</span>
             </button>
           ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowSearch(true)}
-            className="rounded-lg p-1.5 transition-colors"
-            style={{ background: 'var(--border)', color: 'var(--text-dim)' }} title="Search (/)">
-            <Search size={16} />
-          </button>
-          <NotificationBell onNavigate={handleNotificationNavigate} />
-          <button onClick={toggleTheme}
-            className="rounded-lg p-1.5 transition-colors"
-            style={{ background: 'var(--border)', color: 'var(--text-dim)' }}
-            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
-            {isDark ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-          <button onClick={() => handleTabChange('profile')}
-            className="rounded-full ring-2 ring-transparent hover:ring-[#E8A020]/40 transition-all"
-            title="Your profile">
-            <Avatar user={user} size={30} />
-          </button>
-        </div>
-      </nav>
+        </nav>
 
-      {/* Mobile bottom nav */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 flex border-t border-t06" style={{ background: 'var(--nav-bg-mobile)', backdropFilter: 'blur(12px)' }}>
-        {TABS.map(({ id, label, Icon }) => (
-          <button key={id} onClick={() => handleTabChange(id)}
-            className="flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-colors"
-            style={{ color: tab === id ? '#E8A020' : 'var(--text-35)' }}>
-            <Icon size={20} />
-            <span className="text-[10px] font-medium">{label}</span>
-          </button>
-        ))}
-      </nav>
+        {/* Main content */}
+        <main className="flex-1 min-w-0" key={tab}>
+          <div className="pt-4 pb-24 lg:pb-8 px-4 max-w-2xl mx-auto">
+            <div className="fade-up">
+              {tab !== 'clubs' || !selectedClub ? (
+                <div className="flex items-center justify-between mb-4">
+                  <h1 className="font-display text-fs-3xl font-bold">{TAB_TITLES[tab]}</h1>
+                  <div className="lg:hidden">
+                    <NotificationBell onNavigate={handleNotificationNavigate} />
+                  </div>
+                </div>
+              ) : null}
 
-      {/* Main content */}
-      <main className="pt-4 sm:pt-4 pb-24 sm:pb-8 px-4 max-w-2xl mx-auto" key={tab}>
-        <div className="fade-up">
-          {tab !== 'clubs' || !selectedClub ? (
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="font-display text-fs-3xl font-bold">{TAB_TITLES[tab]}</h1>
-              <div className="sm:hidden">
-                <NotificationBell onNavigate={handleNotificationNavigate} />
-              </div>
+              {tab === 'feed' && <GlobalFeed />}
+              {tab === 'clubs' && !selectedClub && <MyClubs onSelectClub={setSelectedClub} />}
+              {tab === 'clubs' && selectedClub && (
+                <ClubDetail clubId={selectedClub} currentUser={user} onBack={() => setSelectedClub(null)} pendingSubTab={pendingSubTab} />
+              )}
+              {tab === 'discover' && <Discover onSelectClub={(id) => { handleTabChange('clubs'); setSelectedClub(id) }} />}
+              {tab === 'ranks' && <Leaderboard />}
+              {tab === 'stats' && <Analytics />}
+              {tab === 'profile' && <Profile onLogout={handleLogout} />}
             </div>
-          ) : null}
-
-          {tab === 'feed' && <GlobalFeed />}
-          {tab === 'clubs' && !selectedClub && <MyClubs onSelectClub={setSelectedClub} />}
-          {tab === 'clubs' && selectedClub && (
-            <ClubDetail clubId={selectedClub} currentUser={user} onBack={() => setSelectedClub(null)} pendingSubTab={pendingSubTab} />
-          )}
-          {tab === 'discover' && <Discover onSelectClub={(id) => { handleTabChange('clubs'); setSelectedClub(id) }} />}
-          {tab === 'ranks' && <Leaderboard />}
-          {tab === 'stats' && <Analytics />}
-          {tab === 'profile' && <Profile onLogout={handleLogout} />}
-        </div>
-      </main>
+          </div>
+        </main>
+      </div>
 
       {showSearch && (
         <SearchModal
