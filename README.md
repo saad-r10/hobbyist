@@ -1,5 +1,7 @@
 # Hobbyist
 
+[![CI](https://github.com/saad-r10/hobbyist/actions/workflows/ci.yml/badge.svg)](https://github.com/saad-r10/hobbyist/actions/workflows/ci.yml)
+
 A fully functional hobbyist club platform — where people host and join clubs around shared media. Think Goodreads meets Letterboxd meets Discord, purpose-built for small group clubs.
 
 ## Features
