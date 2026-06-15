@@ -4,6 +4,7 @@ import {
   BarChart2, User, Heart, MessageCircle, Star,
   ArrowLeft, Flame, Plus, Check, Clock, Send, LogOut,
   Users, AlertCircle, Loader2, X, Settings, Search, TrendingUp,
+  PlayCircle, CheckCircle2, Sparkles, MessageSquare, Upload,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext.jsx'
@@ -118,15 +119,91 @@ function useApi(fetcher, deps = []) {
 
 const ACTIVITY_COLORS = { book: '#C47D5A', film: '#6B8DD6', podcast: '#4AADAB', game: '#9B6DB5' }
 
+const ACTIVITY_META = {
+  started_item:  { icon: PlayCircle,   color: 'var(--accent)' },
+  finished_item: { icon: CheckCircle2, color: 'var(--success)' },
+  rated:         { icon: Star,         color: 'var(--accent)' },
+  joined_club:   { icon: Users,        color: '#6B8DD6' },
+  created_club:  { icon: Sparkles,     color: '#9B6DB5' },
+  posted:        { icon: MessageSquare, color: '#4AADAB' },
+  import:        { icon: Upload,       color: '#C47D5A' },
+}
+
+// Adds an alpha component to a color, whether it's a hex literal or a var(--token)
+function withAlpha(color, pct) {
+  if (color.startsWith('#')) return color + Math.round(pct * 2.55).toString(16).padStart(2, '0')
+  return `color-mix(in srgb, ${color} ${pct}%, transparent)`
+}
+
+function activityAccent(item) {
+  if (item.type === 'rated' || item.type === 'started_item' || item.type === 'finished_item') {
+    return ACTIVITY_COLORS[item.extra?.type] || ACTIVITY_META[item.type]?.color || 'var(--accent)'
+  }
+  return ACTIVITY_META[item.type]?.color || 'var(--accent)'
+}
+
+function ActivityBadge({ type, accent, size = 22 }) {
+  const Icon = ACTIVITY_META[type]?.icon || MessageSquare
+  return (
+    <div className="rounded-full flex items-center justify-center shrink-0"
+      style={{ width: size, height: size, background: withAlpha(accent, 15), color: accent }}>
+      <Icon size={size * 0.6} strokeWidth={2.25} />
+    </div>
+  )
+}
+
+const QUICK_REACTIONS = ['👍', '❤️', '🎉', '👏']
+
+function InlineReactionBar({ item }) {
+  const [active, setActive] = useState(null)
+  const [count, setCount] = useState(item.likeCount || 0)
+
+  function toggle(emoji) {
+    if (active === emoji) {
+      setActive(null)
+      setCount(c => Math.max(0, c - 1))
+    } else {
+      setCount(c => c + (active ? 0 : 1))
+      setActive(emoji)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3 pt-2 mt-1 border-t border-t06">
+      <div className="flex items-center gap-0.5">
+        {QUICK_REACTIONS.map(emoji => (
+          <button key={emoji} onClick={() => toggle(emoji)}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all hover:scale-110 active:scale-95"
+            style={{
+              background: active === emoji ? 'var(--accent-15)' : 'transparent',
+              filter: active && active !== emoji ? 'grayscale(1) opacity(0.45)' : 'none',
+            }}>
+            {emoji}
+          </button>
+        ))}
+        {count > 0 && <span className="text-xs text-t40 ml-0.5">{count}</span>}
+      </div>
+      <button className="flex items-center gap-1.5 text-xs text-t35 hover:text-t60 transition-colors ml-auto">
+        <MessageCircle size={13} />
+        {item.commentCount > 0 ? item.commentCount : ''}
+      </button>
+    </div>
+  )
+}
+
 function FeedCard({ item }) {
-  const [liked, setLiked] = useState(false)
-  const [likeCount, setLikeCount] = useState(item.likeCount || 0)
-  const accent = ACTIVITY_COLORS[item.extra?.type] || '#E8A020'
+  const accent = activityAccent(item)
 
   return (
     <div className="rounded-2xl p-4 border border-t06 fade-up" style={{ background: 'var(--surface)' }}>
       <div className="flex items-start gap-3 mb-3">
-        <Avatar user={item.user} size={36} />
+        <div className="relative shrink-0">
+          <Avatar user={item.user} size={36} />
+          <div className="absolute -bottom-1 -right-1 rounded-full flex items-center justify-center"
+            style={{ width: 16, height: 16, background: accent, color: '#fff', border: '2px solid var(--surface)' }}>
+            {(() => { const Icon = ACTIVITY_META[item.type]?.icon || MessageSquare; return <Icon size={9} strokeWidth={2.5} /> })()}
+          </div>
+        </div>
         <div className="flex-1 min-w-0">
           <span className="font-medium text-sm" style={{ color: 'var(--text)' }}>{item.user?.displayName}</span>
           <span className="text-t40 text-sm"> {item.label} </span>
@@ -144,23 +221,57 @@ function FeedCard({ item }) {
       )}
 
       {item.type === 'joined_club' && item.clubName && (
-        <div className="rounded-xl px-3 py-2 text-sm text-t60 mb-3" style={{ background: 'var(--surface-04)', border: '1px solid var(--border-06)' }}>
+        <div className="rounded-xl px-3 py-2 text-sm text-t60 mb-3" style={{ background: withAlpha(accent, 8), border: `1px solid ${withAlpha(accent, 18)}` }}>
           Joined <span style={{ color: accent }}>{item.clubName}</span>
         </div>
       )}
 
-      <div className="flex items-center gap-4 pt-2 border-t border-t06">
-        <button onClick={() => { setLiked(l => !l); setLikeCount(c => c + (liked ? -1 : 1)) }}
-          className="flex items-center gap-1.5 text-xs transition-colors"
-          style={{ color: liked ? '#E87070' : 'var(--text-35)' }}>
-          <Heart size={13} fill={liked ? '#E87070' : 'none'} />
-          {likeCount > 0 ? likeCount : ''}
-        </button>
-        <button className="flex items-center gap-1.5 text-xs text-t35 hover:text-t60 transition-colors">
-          <MessageCircle size={13} />
-          {item.commentCount > 0 ? item.commentCount : ''}
-        </button>
+      <InlineReactionBar item={item} />
+    </div>
+  )
+}
+
+function GroupedActivityRow({ item }) {
+  const accent = activityAccent(item)
+  return (
+    <div className="flex items-center gap-2.5 py-2">
+      <ActivityBadge type={item.type} accent={accent} size={22} />
+      <div className="flex-1 min-w-0 text-sm">
+        <span className="text-t40">{item.label} </span>
+        {item.title && <span className="font-medium" style={{ color: accent }}>"{item.title}"</span>}
+        {item.clubName && !item.title && <span className="font-medium" style={{ color: accent }}>{item.clubName}</span>}
+        {item.rating && <Stars rating={item.rating} />}
       </div>
+      <span className="text-t30 text-xs shrink-0">{item.time}</span>
+    </div>
+  )
+}
+
+function FeedGroup({ group }) {
+  if (group.items.length === 1) return <FeedCard item={group.items[0]} />
+
+  const aggregate = {
+    likeCount: group.items.reduce((sum, i) => sum + (i.likeCount || 0), 0),
+    commentCount: group.items.reduce((sum, i) => sum + (i.commentCount || 0), 0),
+  }
+
+  return (
+    <div className="rounded-2xl p-4 border border-t06 fade-up" style={{ background: 'var(--surface)' }}>
+      <div className="flex items-center gap-3 mb-1">
+        <Avatar user={group.user} size={36} />
+        <div className="flex-1 min-w-0">
+          <span className="font-medium text-sm" style={{ color: 'var(--text)' }}>{group.user?.displayName}</span>
+          <span className="text-t40 text-sm"> · {group.items.length} updates</span>
+        </div>
+      </div>
+      <div className="pl-[46px]">
+        {group.items.map((item, i) => (
+          <div key={item.id} className={i > 0 ? 'border-t border-t06' : ''}>
+            <GroupedActivityRow item={item} />
+          </div>
+        ))}
+      </div>
+      <InlineReactionBar item={aggregate} />
     </div>
   )
 }
@@ -174,10 +285,27 @@ function SkeletonCard() {
           <div className="h-3.5 w-1/2 skeleton-text" />
           <div className="h-3 w-3/4 skeleton-text" />
         </div>
+        <div className="h-3 w-10 skeleton-text" />
       </div>
-      <div className="h-3 w-1/4 skeleton-text" />
+      <div className="flex items-center gap-1 pt-2 mt-1 border-t border-t06">
+        {[...Array(4)].map((_, i) => <div key={i} className="w-7 h-7 skeleton-circle" />)}
+      </div>
     </div>
   )
+}
+
+// Groups consecutive activities from the same user into a single feed item
+function groupFeedItems(data) {
+  const groups = []
+  for (const item of data) {
+    const last = groups[groups.length - 1]
+    if (last && last.user?.id === item.user?.id) {
+      last.items.push(item)
+    } else {
+      groups.push({ user: item.user, items: [item] })
+    }
+  }
+  return groups
 }
 
 function GlobalFeed() {
@@ -187,9 +315,11 @@ function GlobalFeed() {
   if (error) return <ErrorState message={error} onRetry={refetch} />
   if (!data?.length) return <EmptyState icon={Home} title="Nothing in your feed yet" sub="Join a club to see activity from your clubmates." />
 
+  const groups = groupFeedItems(data)
+
   return (
     <div className="space-y-3">
-      {data.map(item => <FeedCard key={item.id} item={item} />)}
+      {groups.map(group => <FeedGroup key={group.items[0].id} group={group} />)}
     </div>
   )
 }
