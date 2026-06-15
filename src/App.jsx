@@ -1534,7 +1534,7 @@ export default function App() {
         {/* Main content */}
         <main className="flex-1 min-w-0" key={tab}>
           <div className="pt-4 pb-24 lg:pb-8 px-4 max-w-2xl mx-auto">
-            <div className="fade-up">
+            <div className="page-transition">
               {tab !== 'clubs' || !selectedClub ? (
                 <div className="flex items-center justify-between mb-4">
                   <h1 className="font-display text-fs-3xl font-bold">{TAB_TITLES[tab]}</h1>
