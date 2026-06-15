@@ -1,3 +1,5 @@
+import path from 'path'
+import { fileURLToPath } from 'url'
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
@@ -67,6 +69,17 @@ app.use('/api/search', searchRoutes)
 app.use('/api/notifications', notificationRoutes)
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, env: process.env.NODE_ENV }))
+
+// Serve the built frontend (single-service deploy) — must come after API routes
+// so unmatched /api/* requests still fall through to the JSON error handler.
+if (!isDev) {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url))
+  const distDir = path.join(__dirname, '../../dist')
+
+  app.use(express.static(distDir))
+  app.get(/^\/(?!api\/).*/, (_req, res) => res.sendFile(path.join(distDir, 'index.html')))
+}
+
 app.use(errorHandler)
 
 export default app
