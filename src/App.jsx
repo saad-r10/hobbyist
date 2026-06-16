@@ -561,7 +561,7 @@ function DiscussionTab({ clubId, accent }) {
           <p className="text-sm text-t70 leading-relaxed mb-3">{p.body}</p>
 
           {expanded[p.id] && p.replies.map((r, i) => (
-            <div key={i} className="flex gap-2.5 mb-2 pl-4 border-l-2" style={{ borderColor: `${accent}30` }}>
+            <div key={i} className="flex gap-2.5 mb-2 pl-4 border-l-2" style={{ borderColor: withAlpha(accent, 19) }}>
               <Avatar user={r.user} size={24} />
               <div>
                 <span className="font-medium text-xs" style={{ color: accent }}>{r.user?.displayName}</span>
@@ -644,25 +644,62 @@ function ChatTab({ clubId, currentUser, accent }) {
 
   const isMe = (msg) => msg.user?.id === currentUser?.id
 
+  // Group consecutive messages from the same sender
+  const msgGroups = []
+  messages?.forEach(msg => {
+    const last = msgGroups[msgGroups.length - 1]
+    if (last && last[0].user?.id === msg.user?.id) last.push(msg)
+    else msgGroups.push([msg])
+  })
+
   return (
     <div className="flex flex-col h-[calc(100vh-280px)] sm:h-[520px]">
-      <div className="flex-1 overflow-y-auto space-y-3 pr-1 no-scrollbar">
+      <div className="flex-1 overflow-y-auto no-scrollbar py-1" style={{ paddingRight: 2 }}>
         {!messages?.length && <EmptyState icon={MessageCircle} title="No messages yet" sub="Say hello to your clubmates!" />}
-        {messages?.map(msg => (
-          <div key={msg.id} className={`flex items-end gap-2 ${isMe(msg) ? 'flex-row-reverse' : ''}`}>
-            {!isMe(msg) && <Avatar user={msg.user} size={28} />}
-            <div className="max-w-[75%]">
-              {!isMe(msg) && <p className="text-xs mb-1 ml-1" style={{ color: msg.user?.avatarColor || accent }}>{msg.user?.displayName}</p>}
-              <div className="rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed"
-                style={isMe(msg)
-                  ? { background: accent, color: 'var(--bg)' }
-                  : { background: 'var(--surface-07)', color: 'var(--text)' }}>
-                {msg.text}
+        <div className="space-y-2.5">
+          {msgGroups.map((group, gi) => {
+            const mine = isMe(group[0])
+            return (
+              <div key={gi} className={`flex items-end gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
+                <div className="w-7 shrink-0 self-end mb-1">
+                  {!mine && <Avatar user={group[0].user} size={28} />}
+                </div>
+                <div className={`flex flex-col gap-0.5 max-w-[75%] ${mine ? 'items-end' : 'items-start'}`}>
+                  {!mine && (
+                    <p className="text-xs mb-0.5 ml-1 font-medium"
+                      style={{ color: group[0].user?.avatarColor || accent }}>
+                      {group[0].user?.displayName}
+                    </p>
+                  )}
+                  {group.map((msg, mi) => {
+                    const first = mi === 0
+                    const last = mi === group.length - 1
+                    const r = 18
+                    const s = 5
+                    const borderRadius = mine
+                      ? `${r}px ${first ? r : s}px ${last ? r : s}px ${r}px`
+                      : `${first ? r : s}px ${r}px ${r}px ${last ? r : s}px`
+                    return (
+                      <div key={msg.id}
+                        className="px-3.5 py-2 text-sm leading-relaxed"
+                        style={{
+                          background: mine ? accent : 'var(--surface2)',
+                          color: mine ? 'var(--accent-text)' : 'var(--text)',
+                          borderRadius,
+                          border: mine ? 'none' : '1px solid var(--border-06)',
+                        }}>
+                        {msg.text}
+                      </div>
+                    )
+                  })}
+                  <p className={`text-[10px] mt-0.5 text-t25 ${mine ? 'mr-1' : 'ml-1'}`}>
+                    {group[group.length - 1].time}
+                  </p>
+                </div>
               </div>
-              <p className={`text-xs mt-1 text-t25 ${isMe(msg) ? 'text-right mr-1' : 'ml-1'}`}>{msg.time}</p>
-            </div>
-          </div>
-        ))}
+            )
+          })}
+        </div>
         <div ref={bottomRef} />
       </div>
       <form onSubmit={sendMessage} className="flex gap-2 mt-3 pt-3 border-t border-t06">
@@ -670,7 +707,7 @@ function ChatTab({ clubId, currentUser, accent }) {
           className="input-field flex-1 text-sm py-2.5" />
         <button type="submit" disabled={!text.trim() || sending}
           className="rounded-xl px-4 py-2.5 transition-opacity disabled:opacity-40"
-          style={{ background: accent, color: 'var(--bg)' }}>
+          style={{ background: accent, color: 'var(--accent-text)' }}>
           <Send size={15} />
         </button>
       </form>
@@ -838,80 +875,125 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
   const myProgress = progress ?? club?.currentItem?.myProgress ?? 0
-  const SUB_TABS = ['discussion', 'chat', 'members', 'past']
+  const SUB_TABS = [
+    { id: 'discussion', label: 'Discussion', Icon: MessageCircle },
+    { id: 'chat',       label: 'Chat',       Icon: MessageSquare },
+    { id: 'members',    label: 'Members',    Icon: Users },
+    { id: 'past',       label: 'Past',       Icon: Clock },
+  ]
 
   return (
     <div className="fade-up">
-      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-t50 hover:text-t80 mb-4 transition-colors">
-        <ArrowLeft size={15} /> All clubs
-      </button>
-
-      {/* Header */}
-      <div className="rounded-2xl p-4 mb-4 border border-t06" style={{ background: club?.bgColor || 'var(--surface)' }}>
-        <div className="flex items-start justify-between mb-3">
-          <div className="min-w-0">
-            <div className="text-2xl mb-1">{club?.emoji}</div>
-            <h2 className="font-display text-fs-2xl font-bold truncate" style={{ color: 'var(--text)' }}>{club?.name}</h2>
-            <p className="text-xs text-t40 mt-0.5">{club?.memberCount} members · {club?.type}</p>
-          </div>
-          {isAdmin && (
-            <button onClick={() => setShowAddItem(true)}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
-              style={{ background: `${accent}20`, color: accent }}>
-              <Plus size={12} /> Set item
-            </button>
-          )}
-        </div>
-
-        {club?.currentItem ? (
-          <div className="rounded-xl p-3 border border-t08" style={{ background: 'rgba(0,0,0,0.2)' }}>
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-14 rounded-lg flex items-center justify-center shrink-0" style={{ background: club.currentItem.coverColor }}>
-                <TypeIcon type={club.type} size={16} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-t40 mb-0.5">Currently reading / watching</p>
-                <p className="font-semibold text-sm leading-snug" style={{ color: 'var(--text)' }}>{club.currentItem.title}</p>
-                <p className="text-xs text-t50">{club.currentItem.subtitle}</p>
-                <div className="mt-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-t40">My progress</span>
-                    <span className="text-xs font-medium" style={{ color: accent }}>{myProgress}%</span>
-                  </div>
-                  <input type="range" min={0} max={100} value={myProgress} onChange={e => updateProgress(Number(e.target.value))}
-                    className="w-full accent-current" style={{ accentColor: accent }} />
-                </div>
-                <button onClick={() => setShowRate(true)}
-                  className="mt-2 text-xs px-3 py-1.5 rounded-lg transition-colors"
-                  style={{ background: `${accent}20`, color: accent }}>
-                  Rate this item
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-xl p-3 text-center border border-t06" style={{ background: 'rgba(0,0,0,0.1)' }}>
-            <p className="text-sm text-t40">No current item set.</p>
-            {isAdmin && <button onClick={() => setShowAddItem(true)} className="text-xs mt-1" style={{ color: accent }}>Add one</button>}
-          </div>
+      {/* Back + club identity row */}
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-t50 hover:text-t80 transition-colors">
+          <ArrowLeft size={15} /> All clubs
+        </button>
+        {isAdmin && (
+          <button onClick={() => setShowAddItem(true)}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors"
+            style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
+            <Plus size={12} /> Set item
+          </button>
         )}
       </div>
 
+      {/* Club identity card */}
+      <div className="rounded-2xl p-4 mb-3 border border-t06" style={{ background: club?.bgColor || 'var(--surface)' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0"
+            style={{ background: 'var(--surface2)' }}>
+            {club?.emoji}
+          </div>
+          <div className="min-w-0">
+            <h2 className="font-display text-fs-xl font-bold leading-tight truncate" style={{ color: 'var(--text)' }}>
+              {club?.name}
+            </h2>
+            <p className="text-xs text-t40 mt-0.5 capitalize">{club?.memberCount} members · {club?.type}s</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Current item hero */}
+      {club?.currentItem ? (
+        <div className="rounded-2xl overflow-hidden mb-4 border border-t06" style={{ background: 'var(--surface)' }}>
+          {/* Gradient banner */}
+          <div className="h-20 relative" style={{ background: 'var(--gradient-warm)', opacity: 0.85 }} />
+
+          <div className="px-4 pb-4" style={{ marginTop: -32 }}>
+            <div className="flex items-end gap-4">
+              {/* Cover block — overlaps the banner */}
+              <div className="w-14 h-20 rounded-xl flex items-center justify-center shrink-0 border border-t08"
+                style={{ background: club.currentItem.coverColor || 'var(--surface2)', boxShadow: 'var(--shadow-md)' }}>
+                <TypeIcon type={club.type} size={20} />
+              </div>
+              <div className="flex-1 min-w-0 pt-9">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-t40 mb-0.5">Now {club.type === 'book' ? 'reading' : club.type === 'film' ? 'watching' : club.type === 'game' ? 'playing' : 'listening'}</p>
+                <p className="font-display font-semibold text-fs-md leading-tight truncate" style={{ color: 'var(--text)' }}>{club.currentItem.title}</p>
+                <p className="text-xs text-t50 truncate">{club.currentItem.subtitle}</p>
+              </div>
+            </div>
+
+            {/* Member avatar stack */}
+            {club.members?.length > 0 && (
+              <div className="flex items-center gap-2 mt-3">
+                <div className="flex -space-x-2">
+                  {club.members.slice(0, 5).map((m, i) => (
+                    <div key={i} style={{ zIndex: 5 - i }}>
+                      <Avatar user={m.user} size={22} />
+                    </div>
+                  ))}
+                </div>
+                <span className="text-xs text-t40">{club.memberCount} reading along</span>
+              </div>
+            )}
+
+            {/* Progress */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-t40">My progress</span>
+                <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>{myProgress}%</span>
+              </div>
+              <input type="range" min={0} max={100} value={myProgress} onChange={e => updateProgress(Number(e.target.value))}
+                className="w-full" style={{ accentColor: 'var(--accent)' }} />
+            </div>
+
+            <button onClick={() => setShowRate(true)}
+              className="mt-3 text-xs px-3 py-1.5 rounded-lg transition-colors"
+              style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
+              Rate this item
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl p-4 mb-4 text-center border border-t06" style={{ background: 'var(--surface)' }}>
+          <p className="text-sm text-t40">No current item set.</p>
+          {isAdmin && (
+            <button onClick={() => setShowAddItem(true)} className="text-xs mt-1" style={{ color: 'var(--accent)' }}>
+              Add one
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Sub-tabs */}
-      <div className="flex gap-1 mb-4 p-1 rounded-xl" style={{ background: 'var(--surface)' }}>
-        {SUB_TABS.map(t => (
-          <button key={t} onClick={() => setSubTab(t)}
-            className="flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-all"
-            style={subTab === t ? { background: accent, color: 'var(--bg)' } : { color: 'var(--text-50)' }}>
-            {t}
+      <div className="flex gap-1 mb-4 p-1 rounded-xl border border-t06" style={{ background: 'var(--surface)' }}>
+        {SUB_TABS.map(({ id, label, Icon }) => (
+          <button key={id} onClick={() => setSubTab(id)}
+            className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-medium rounded-lg transition-all"
+            style={subTab === id
+              ? { background: 'var(--accent)', color: 'var(--accent-text)' }
+              : { color: 'var(--text-50)' }}>
+            <Icon size={11} />
+            {label}
           </button>
         ))}
       </div>
 
-      {subTab === 'discussion' && <DiscussionTab clubId={clubId} accent={accent} myUserId={currentUser?.id} />}
-      {subTab === 'chat' && <ChatTab clubId={clubId} currentUser={currentUser} accent={accent} />}
-      {subTab === 'members' && <MembersTab members={club?.members} currentItem={club?.currentItem} accent={accent} />}
-      {subTab === 'past' && <PastItemsTab items={club?.pastItems} accent={accent} />}
+      {subTab === 'discussion' && <DiscussionTab clubId={clubId} accent="var(--accent)" myUserId={currentUser?.id} />}
+      {subTab === 'chat' && <ChatTab clubId={clubId} currentUser={currentUser} accent="var(--accent)" />}
+      {subTab === 'members' && <MembersTab members={club?.members} currentItem={club?.currentItem} accent="var(--accent)" />}
+      {subTab === 'past' && <PastItemsTab items={club?.pastItems} accent="var(--accent)" />}
 
       {showAddItem && (
         <AddItemModal clubId={clubId} clubType={club?.type} onClose={() => setShowAddItem(false)} onAdded={() => { setShowAddItem(false); refetch() }} />
