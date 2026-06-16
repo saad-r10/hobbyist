@@ -38,15 +38,15 @@ function Stars({ rating, max = 5 }) {
     <div className="flex gap-0.5">
       {Array.from({ length: max }).map((_, i) => (
         <Star key={i} size={11}
-          fill={i < Math.round(rating) ? '#E8A020' : 'none'}
-          stroke={i < Math.round(rating) ? '#E8A020' : 'var(--text-25)'}
+          fill={i < Math.round(rating) ? 'var(--accent)' : 'none'}
+          stroke={i < Math.round(rating) ? 'var(--accent)' : 'var(--text-25)'}
           strokeWidth={1.5} />
       ))}
     </div>
   )
 }
 
-function ProgressRing({ pct, size = 36, stroke = 3, color = '#E8A020' }) {
+function ProgressRing({ pct, size = 36, stroke = 3, color = 'var(--accent)' }) {
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
   const dash = (pct / 100) * c
@@ -59,7 +59,7 @@ function ProgressRing({ pct, size = 36, stroke = 3, color = '#E8A020' }) {
   )
 }
 
-function ProgressBar({ pct, color = '#E8A020' }) {
+function ProgressBar({ pct, color = 'var(--accent)' }) {
   return (
     <div className="h-1.5 rounded-full w-full" style={{ background: 'var(--border-08)' }}>
       <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
@@ -117,16 +117,16 @@ function useApi(fetcher, deps = []) {
 
 // ── Global Feed ──────────────────────────────────────────────────────────
 
-const ACTIVITY_COLORS = { book: '#C47D5A', film: '#6B8DD6', podcast: '#4AADAB', game: '#9B6DB5' }
+const ACTIVITY_COLORS = { book: 'var(--color-book)', film: 'var(--color-film)', podcast: 'var(--color-podcast)', game: 'var(--color-game)' }
 
 const ACTIVITY_META = {
   started_item:  { icon: PlayCircle,   color: 'var(--accent)' },
   finished_item: { icon: CheckCircle2, color: 'var(--success)' },
   rated:         { icon: Star,         color: 'var(--accent)' },
-  joined_club:   { icon: Users,        color: '#6B8DD6' },
-  created_club:  { icon: Sparkles,     color: '#9B6DB5' },
-  posted:        { icon: MessageSquare, color: '#4AADAB' },
-  import:        { icon: Upload,       color: '#C47D5A' },
+  joined_club:   { icon: Users,        color: 'var(--color-film)' },
+  created_club:  { icon: Sparkles,     color: 'var(--color-game)' },
+  posted:        { icon: MessageSquare, color: 'var(--color-podcast)' },
+  import:        { icon: Upload,       color: 'var(--color-book)' },
 }
 
 // Adds an alpha component to a color, whether it's a hex literal or a var(--token)
@@ -327,7 +327,7 @@ function GlobalFeed() {
 // ── My Clubs ─────────────────────────────────────────────────────────────
 
 function ClubCard({ club, onClick }) {
-  const accent = club.accentColor || '#E8A020'
+  const accent = club.accentColor || 'var(--accent)'
   return (
     <button onClick={onClick} className="w-full rounded-2xl p-4 text-left transition-all hover:scale-[1.01] active:scale-[0.99] border border-t06"
       style={{ background: 'var(--surface)' }}>
@@ -405,8 +405,8 @@ function CreateClubModal({ onClose, onCreated }) {
                   className="rounded-xl py-2 text-center text-xs border transition-all"
                   style={{
                     background: form.type === t.id ? 'var(--accent-15)' : 'var(--surface-04)',
-                    borderColor: form.type === t.id ? '#E8A020' : 'var(--border-08)',
-                    color: form.type === t.id ? '#E8A020' : 'var(--text-50)',
+                    borderColor: form.type === t.id ? 'var(--accent)' : 'var(--border-08)',
+                    color: form.type === t.id ? 'var(--accent)' : 'var(--text-50)',
                   }}>
                   <div className="text-base mb-0.5">{t.emoji}</div>
                   {t.label}
@@ -423,7 +423,7 @@ function CreateClubModal({ onClose, onCreated }) {
             <span className="text-sm text-t60">Public club</span>
             <button type="button" onClick={() => setForm(f => ({ ...f, isPublic: !f.isPublic }))}
               className="w-11 h-6 rounded-full transition-colors relative"
-              style={{ background: form.isPublic ? '#E8A020' : 'var(--text-15)' }}>
+              style={{ background: form.isPublic ? 'var(--accent)' : 'var(--text-15)' }}>
               <div className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all"
                 style={{ left: form.isPublic ? '1.375rem' : '0.25rem' }} />
             </button>
@@ -450,7 +450,7 @@ function MyClubs({ onSelectClub }) {
         <h2 className="font-display text-fs-xl font-semibold">Your clubs</h2>
         <button onClick={() => setShowCreate(true)}
           className="flex items-center gap-1.5 text-xs font-medium rounded-lg px-3 py-1.5 transition-colors"
-          style={{ background: 'var(--accent-12)', color: '#E8A020' }}>
+          style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
           <Plus size={13} /> New club
         </button>
       </div>
@@ -763,7 +763,7 @@ function AddItemModal({ clubId, clubType, onClose, onAdded }) {
               {COLORS.map(c => (
                 <button key={c} type="button" onClick={() => setForm(f => ({ ...f, coverColor: c }))}
                   className="w-7 h-7 rounded-lg border-2 transition-all"
-                  style={{ background: c, borderColor: form.coverColor === c ? '#E8A020' : 'transparent' }} />
+                  style={{ background: c, borderColor: form.coverColor === c ? 'var(--accent)' : 'transparent' }} />
               ))}
             </div>
           </div>
@@ -799,7 +799,7 @@ function RateModal({ clubId, itemTitle, onClose, onRated }) {
         <div className="flex gap-2 justify-center mb-4">
           {[1,2,3,4,5].map(v => (
             <button key={v} onMouseEnter={() => setHover(v)} onMouseLeave={() => setHover(0)} onClick={() => setRating(v)}>
-              <Star size={32} fill={(hover || rating) >= v ? '#E8A020' : 'none'} stroke={(hover || rating) >= v ? '#E8A020' : 'var(--text-30)'} strokeWidth={1.5} />
+              <Star size={32} fill={(hover || rating) >= v ? 'var(--accent)' : 'none'} stroke={(hover || rating) >= v ? 'var(--accent)' : 'var(--text-30)'} strokeWidth={1.5} />
             </button>
           ))}
         </div>
@@ -825,7 +825,7 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
     if (pendingSubTab) setSubTab(pendingSubTab.subTab)
   }, [pendingSubTab])
 
-  const accent = club?.accentColor || '#E8A020'
+  const accent = club?.accentColor || 'var(--accent)'
   const isAdmin = club?.myRole === 'admin'
 
   async function updateProgress(val) {
@@ -1193,7 +1193,7 @@ function Leaderboard() {
         {PERIODS.map(p => (
           <button key={p} onClick={() => setPeriod(p)}
             className="px-4 py-1.5 text-xs font-medium rounded-lg capitalize transition-all"
-            style={period === p ? { background: '#E8A020', color: 'var(--bg)' } : { color: 'var(--text-50)' }}>
+            style={period === p ? { background: 'var(--accent)', color: 'var(--accent-text)' } : { color: 'var(--text-50)' }}>
             {p === 'all' ? 'All time' : p.charAt(0).toUpperCase() + p.slice(1)}
           </button>
         ))}
@@ -1235,14 +1235,14 @@ function Leaderboard() {
                 <Flame size={12} fill="#E87070" /> {entry.streak}
               </div>
             )}
-            <span className="text-sm font-semibold" style={{ color: '#E8A020' }}>{entry.score}</span>
+            <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>{entry.score}</span>
           </div>
         ))}
       </div>
 
       {myRank > 10 && (
         <div className="mt-4 rounded-xl px-4 py-3 text-center border border-[#E8A020]/20" style={{ background: 'var(--accent-06)' }}>
-          <p className="text-sm text-t60">You're ranked <span style={{ color: '#E8A020' }}>#{myRank}</span> with {myScore} points</p>
+          <p className="text-sm text-t60">You're ranked <span style={{ color: 'var(--accent)' }}>#{myRank}</span> with {myScore} points</p>
           <p className="text-xs text-t30 mt-0.5">Keep engaging to climb the board!</p>
         </div>
       )}
@@ -1263,17 +1263,17 @@ function Analytics() {
   const { summary, monthly, types, heatmap, recentRatings } = data || {}
 
   const maxMonthly = Math.max(...(monthly || []).map(m => m.total), 1)
-  const TYPE_COLORS = { book: '#C47D5A', film: '#6B8DD6', podcast: '#4AADAB', game: '#9B6DB5' }
+  const TYPE_COLORS = { book: 'var(--color-book)', film: 'var(--color-film)', podcast: 'var(--color-podcast)', game: 'var(--color-game)' }
 
   return (
     <div className="space-y-4">
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: 'Finished', val: summary?.finished ?? 0, color: '#E8A020' },
-          { label: 'Avg rating', val: summary?.avgRating ? `${summary.avgRating}★` : '—', color: '#7A9E7E' },
-          { label: 'Clubs', val: summary?.clubs ?? 0, color: '#6B8DD6' },
-          { label: 'This year', val: summary?.thisYear ?? 0, color: '#C47D5A' },
+          { label: 'Finished', val: summary?.finished ?? 0, color: 'var(--accent)' },
+          { label: 'Avg rating', val: summary?.avgRating ? `${summary.avgRating}★` : '—', color: 'var(--success)' },
+          { label: 'Clubs', val: summary?.clubs ?? 0, color: 'var(--color-film)' },
+          { label: 'This year', val: summary?.thisYear ?? 0, color: 'var(--color-book)' },
         ].map(s => (
           <div key={s.label} className="rounded-2xl p-4 border border-t06" style={{ background: 'var(--surface)' }}>
             <p className="text-2xl font-bold" style={{ color: s.color }}>{s.val}</p>
@@ -1290,7 +1290,7 @@ function Analytics() {
             {monthly.map((m, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1">
                 <div className="w-full rounded-t-lg transition-all duration-500"
-                  style={{ height: `${(m.total / maxMonthly) * 100}%`, background: '#E8A020', minHeight: m.total > 0 ? 4 : 0, opacity: 0.8 }} />
+                  style={{ height: `${(m.total / maxMonthly) * 100}%`, background: 'var(--accent)', minHeight: m.total > 0 ? 4 : 0, opacity: 0.8 }} />
                 <span className="text-xs text-t30">{m.month}</span>
               </div>
             ))}
@@ -1306,7 +1306,7 @@ function Analytics() {
             <div className="w-24 h-24 rounded-full shrink-0" style={{
               background: `conic-gradient(${types.map((t, i, arr) => {
                 const start = arr.slice(0, i).reduce((s, x) => s + x.pct, 0)
-                return `${TYPE_COLORS[t.type] || '#E8A020'} ${start}% ${start + t.pct}%`
+                return `${TYPE_COLORS[t.type] || 'var(--accent)'} ${start}% ${start + t.pct}%`
               }).join(', ')})`
             }}>
               <div className="w-full h-full rounded-full" style={{ margin: '14px', width: 'calc(100% - 28px)', height: 'calc(100% - 28px)', background: 'var(--surface)' }} />
@@ -1349,7 +1349,7 @@ function Analytics() {
           <div className="space-y-3">
             {recentRatings.map(r => (
               <div key={r.id} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: TYPE_COLORS[r.type] + '30' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: withAlpha(TYPE_COLORS[r.type] || 'var(--accent)', 19) }}>
                   <TypeIcon type={r.type} size={14} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -1375,8 +1375,8 @@ function Analytics() {
 const SOURCE_META = {
   letterboxd: { label: 'Letterboxd', color: '#00AC34' },
   goodreads:  { label: 'Goodreads',  color: '#553B08' },
-  manual:     { label: 'Manual',     color: '#E8A020' },
-  club:       { label: 'Clubs',      color: '#6B8DD6' },
+  manual:     { label: 'Manual',     color: 'var(--accent)' },
+  club:       { label: 'Clubs',      color: 'var(--color-film)' },
 }
 
 function Profile({ onLogout }) {
@@ -1454,7 +1454,7 @@ function Profile({ onLogout }) {
             { val: analytics?.summary?.avgRating ? `${analytics.summary.avgRating}★` : '—', label: 'Avg rating' },
           ].map((s, i) => (
             <div key={i} className="text-center">
-              <p className="text-xl font-bold" style={{ color: '#E8A020' }}>{s.val}</p>
+              <p className="text-xl font-bold" style={{ color: 'var(--accent)' }}>{s.val}</p>
               <p className="text-xs text-t40">{s.label}</p>
             </div>
           ))}
@@ -1488,7 +1488,7 @@ function Profile({ onLogout }) {
           </div>
           <button onClick={() => setShowImport(true)}
             className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-            style={{ background: 'var(--accent-12)', color: '#E8A020' }}>
+            style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
             <Plus size={12} /> Import
           </button>
         </div>
@@ -1496,7 +1496,7 @@ function Profile({ onLogout }) {
         {Object.keys(importSources).length > 0 ? (
           <div className="space-y-2">
             {Object.entries(importSources).map(([source, count]) => {
-              const meta = SOURCE_META[source] || { label: source, color: '#E8A020' }
+              const meta = SOURCE_META[source] || { label: source, color: 'var(--accent)' }
               return (
                 <div key={source} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1521,11 +1521,11 @@ function Profile({ onLogout }) {
           <h3 className="text-sm font-semibold text-t80 mb-3">Recently rated</h3>
           <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
             {analytics.recentRatings.filter(r => r.rating != null).map(r => {
-              const color = { book: '#C47D5A', film: '#6B8DD6', podcast: '#4AADAB', game: '#9B6DB5' }[r.type] || '#E8A020'
+              const color = { book: 'var(--color-book)', film: 'var(--color-film)', podcast: 'var(--color-podcast)', game: 'var(--color-game)' }[r.type] || 'var(--accent)'
               const sourceMeta = SOURCE_META[r.source]
               return (
                 <div key={r.id} className="shrink-0 w-28 rounded-xl overflow-hidden border border-t06">
-                  <div className="h-20 flex items-center justify-center relative" style={{ background: color + '30' }}>
+                  <div className="h-20 flex items-center justify-center relative" style={{ background: withAlpha(color, 19) }}>
                     <TypeIcon type={r.type} size={20} />
                     {sourceMeta && r.source !== 'club' && (
                       <div className="absolute bottom-1.5 right-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
@@ -1652,7 +1652,7 @@ export default function App() {
           {TABS.map(({ id, label, Icon }) => (
             <button key={id} onClick={() => handleTabChange(id)}
               className="mobile-nav-link flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[44px] relative z-10"
-              style={{ color: tab === id ? '#E8A020' : 'var(--text-35)' }}>
+              style={{ color: tab === id ? 'var(--accent)' : 'var(--text-35)' }}>
               <span className="mobile-nav-icon-wrap flex flex-col items-center gap-0.5">
                 <Icon size={20} />
                 <span className="text-[10px] font-medium">{label}</span>

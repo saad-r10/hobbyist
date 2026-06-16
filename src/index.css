@@ -41,6 +41,20 @@
   --accent-15:       rgba(232,160,32,0.15);
   --accent-20:       rgba(232,160,32,0.20);
   --accent-25:       rgba(232,160,32,0.25);
+  --accent2:         #3DBFBD;
+  --accent2-dark:    #2EA6A4;
+  --accent2-text:    #0F1923;
+  --accent2-06:      rgba(61,191,189,0.06);
+  --accent2-12:      rgba(61,191,189,0.12);
+  --accent2-15:      rgba(61,191,189,0.15);
+  --accent2-20:      rgba(61,191,189,0.20);
+  --accent2-25:      rgba(61,191,189,0.25);
+  --color-book:      #C47D5A;
+  --color-film:      #6B8DD6;
+  --color-podcast:   #3DBFBD;
+  --color-game:      #9B6DB5;
+  --gradient-warm:   linear-gradient(135deg, #E8A020 0%, #D4651A 100%);
+  --gradient-cool:   linear-gradient(135deg, #3DBFBD 0%, #2A6DB5 100%);
   --danger:          #E87070;
   --danger-10:       rgba(232,112,112,0.10);
   --danger-30:       rgba(232,112,112,0.30);
@@ -98,6 +112,20 @@
   --accent-15:       rgba(184,116,18,0.15);
   --accent-20:       rgba(184,116,18,0.20);
   --accent-25:       rgba(184,116,18,0.25);
+  --accent2:         #1A8E8C;
+  --accent2-dark:    #137A78;
+  --accent2-text:    #fff;
+  --accent2-06:      rgba(26,142,140,0.06);
+  --accent2-12:      rgba(26,142,140,0.12);
+  --accent2-15:      rgba(26,142,140,0.15);
+  --accent2-20:      rgba(26,142,140,0.20);
+  --accent2-25:      rgba(26,142,140,0.25);
+  --color-book:      #A85A35;
+  --color-film:      #4A6BBF;
+  --color-podcast:   #1A8E8C;
+  --color-game:      #7A4A95;
+  --gradient-warm:   linear-gradient(135deg, #B87412 0%, #9A4A0A 100%);
+  --gradient-cool:   linear-gradient(135deg, #1A8E8C 0%, #1A5A8A 100%);
   --danger:          #C0392B;
   --danger-10:       rgba(192,57,43,0.10);
   --danger-30:       rgba(192,57,43,0.30);
@@ -205,6 +233,7 @@ body {
   .text-t25       { color: var(--text-25); }
   .text-t15       { color: var(--text-15); }
   .text-accent    { color: var(--accent); }
+  .text-accent2   { color: var(--accent2); }
   .text-danger    { color: var(--danger); }
   .text-success   { color: var(--success); }
   /* Backgrounds */
@@ -215,6 +244,7 @@ body {
   .bg-s06         { background-color: var(--surface-06); }
   .bg-s10         { background-color: var(--surface-10); }
   .bg-accent-12   { background-color: var(--accent-12); }
+  .bg-accent2-12  { background-color: var(--accent2-12); }
   /* Borders */
   .border-t06     { border-color: var(--border-06); }
   .border-t08     { border-color: var(--border-08); }
@@ -321,6 +351,7 @@ body {
   white-space: nowrap;
 }
 .badge-accent  { background: var(--accent-15);  color: var(--accent);  border-color: var(--accent-25); }
+.badge-accent2 { background: var(--accent2-15); color: var(--accent2); border-color: var(--accent2-25); }
 .badge-success { background: var(--success-10); color: var(--success); border-color: var(--success-20); }
 .badge-danger  { background: var(--danger-10);  color: var(--danger);  border-color: var(--danger-30); }
 .badge-neutral { background: var(--surface-10); color: var(--text-70); border-color: var(--border-12); }

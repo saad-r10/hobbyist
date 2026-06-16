@@ -173,15 +173,22 @@ clubhouse/
 
 ### Tokens (CSS custom properties)
 
-| Token         | Dark value     | Light value    | Usage                  |
-|---------------|----------------|----------------|------------------------|
-| `--bg`        | `#0F1923`      | `#F0E6D3`      | Page background        |
-| `--surface`   | `#162030`      | `#EDE0C4`      | Card / panel surfaces  |
-| `--surface2`  | `#1e2d40`      | `#E5D4B0`      | Hover states, inputs   |
-| `--text`      | `#F5F0E8`      | `#2C1810`      | Primary text           |
-| `--text-dim`  | 50% opacity    | 55% opacity    | Secondary text         |
-| `--accent`    | `#E8A020`      | `#B87412`      | Amber — primary action |
-| `--border`    | 8% white       | 12% black      | Dividers, card borders |
+| Token              | Dark value     | Light value    | Usage                            |
+|--------------------|----------------|----------------|----------------------------------|
+| `--bg`             | `#0F1923`      | `#F0E6D3`      | Page background                  |
+| `--surface`        | `#162030`      | `#EDE0C4`      | Card / panel surfaces            |
+| `--surface2`       | `#1e2d40`      | `#E5D4B0`      | Hover states, inputs             |
+| `--text`           | `#F5F0E8`      | `#2C1810`      | Primary text                     |
+| `--text-dim`       | 50% opacity    | 55% opacity    | Secondary text                   |
+| `--accent`         | `#E8A020`      | `#B87412`      | Amber — primary action           |
+| `--accent2`        | `#3DBFBD`      | `#1A8E8C`      | Teal — secondary/cool accent     |
+| `--border`         | 8% white       | 12% black      | Dividers, card borders           |
+| `--color-book`     | `#C47D5A`      | `#A85A35`      | Books media-type color           |
+| `--color-film`     | `#6B8DD6`      | `#4A6BBF`      | Films media-type color           |
+| `--color-podcast`  | `#3DBFBD`      | `#1A8E8C`      | Podcasts (= `--accent2`)         |
+| `--color-game`     | `#9B6DB5`      | `#7A4A95`      | Games media-type color           |
+| `--gradient-warm`  | gold → amber   | gold → amber   | Hero sections, warm CTAs         |
+| `--gradient-cool`  | teal → blue    | teal → blue    | Charts, cool CTAs                |
 
 **Never use hardcoded colors in new components.** Use CSS custom properties or `var(--token)`.
 
