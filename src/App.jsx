@@ -5,6 +5,7 @@ import {
   ArrowLeft, Flame, Plus, Check, Clock, Send, LogOut,
   Users, AlertCircle, Loader2, X, Settings, Search, TrendingUp,
   PlayCircle, CheckCircle2, Sparkles, MessageSquare, Upload,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext.jsx'
@@ -925,78 +926,190 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
 
 // ── Discover ──────────────────────────────────────────────────────────────
 
-function DiscoverClubCard({ club, onJoin }) {
-  const [joining, setJoining] = useState(false)
-  const [joined, setJoined] = useState(false)
-  const accent = club.accentColor || 'var(--accent)'
+const TYPE_COLOR = { book: 'var(--color-book)', film: 'var(--color-film)', podcast: 'var(--color-podcast)', game: 'var(--color-game)' }
 
-  async function handleJoin() {
-    setJoining(true)
-    try {
-      await post(`/clubs/${club.id}/join`, {})
-      setJoined(true)
-      onJoin?.()
-    } catch { /* show nothing on join failure */ }
-    finally { setJoining(false) }
+function FeaturedCarousel({ clubs, onJoin }) {
+  const [idx, setIdx] = useState(0)
+  const [joined, setJoined] = useState({})
+  const [joining, setJoining] = useState(null)
+  const touchX = useRef(null)
+  const featured = clubs?.slice(0, 4) || []
+  if (!featured.length) return null
+
+  const accent = (featured[idx]?.accentColor) || TYPE_COLOR[featured[idx]?.type] || 'var(--accent)'
+
+  async function handleJoin(club) {
+    if (joined[club.id]) return
+    setJoining(club.id)
+    try { await post(`/clubs/${club.id}/join`, {}); setJoined(j => ({ ...j, [club.id]: true })); onJoin?.() }
+    catch { } finally { setJoining(null) }
+  }
+
+  const prev = () => setIdx(i => (i - 1 + featured.length) % featured.length)
+  const next = () => setIdx(i => (i + 1) % featured.length)
+  const onTouchStart = e => { touchX.current = e.touches[0].clientX }
+  const onTouchEnd = e => {
+    if (touchX.current == null) return
+    const dx = touchX.current - e.changedTouches[0].clientX
+    if (dx > 50) next(); else if (dx < -50) prev()
+    touchX.current = null
   }
 
   return (
-    <div className="rounded-2xl p-4 border border-t06 flex flex-col gap-3" style={{ background: 'var(--surface)' }}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
-            style={{ background: `${accent}18` }}>
-            {club.emoji}
-          </div>
-          <div className="min-w-0">
-            <p className="font-semibold text-sm text-themed truncate">{club.name}</p>
-            <p className="text-xs text-t40 flex items-center gap-1 mt-0.5">
-              <TypeIcon type={club.type} size={11} />
-              <span>{club.memberCount} members</span>
-            </p>
-          </div>
+    <div className="space-y-3">
+      <div className="relative overflow-hidden rounded-2xl select-none">
+        <div
+          className="flex"
+          style={{ transform: `translateX(-${idx * 100}%)`, transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1)' }}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          {featured.map(c => {
+            const a = c.accentColor || TYPE_COLOR[c.type] || 'var(--accent)'
+            const isJoined = joined[c.id]
+            const isJoining = joining === c.id
+            return (
+              <div key={c.id} className="min-w-full rounded-2xl overflow-hidden border border-t06"
+                style={{ background: 'var(--surface2)' }}>
+                <div className="h-0.5" style={{ background: `linear-gradient(90deg, ${a}, ${a}40)` }} />
+                <div className="p-5" style={{ background: `linear-gradient(135deg, ${a}20 0%, ${a}06 100%)` }}>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0"
+                      style={{ background: `${a}18`, border: `1px solid ${a}28` }}>
+                      {c.emoji}
+                    </div>
+                    {isJoined ? (
+                      <span className="badge badge-success"><Check size={11} />Joined</span>
+                    ) : (
+                      <button onClick={() => handleJoin(c)} disabled={isJoining}
+                        className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity disabled:opacity-50"
+                        style={{ background: a, color: '#fff' }}>
+                        {isJoining ? '…' : 'Join'}
+                      </button>
+                    )}
+                  </div>
+                  <h2 className="font-display text-xl font-bold text-themed mb-2 leading-tight">{c.name}</h2>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
+                      style={{ background: `${a}18`, color: a }}>
+                      <TypeIcon type={c.type} size={11} />
+                      <span className="capitalize">{c.type}</span>
+                    </span>
+                    <span className="text-xs text-t40">{c.memberCount} members</span>
+                  </div>
+                  {c.description && (
+                    <p className="text-sm text-t60 leading-relaxed line-clamp-2 mb-4">{c.description}</p>
+                  )}
+                  {c.currentItem && (
+                    <div className="flex items-center gap-2 pt-3 border-t border-t06">
+                      <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
+                        style={{ background: `${a}18` }}>
+                        <TypeIcon type={c.type} size={10} />
+                      </div>
+                      <p className="text-xs text-t50 truncate">
+                        Now: <span className="text-t70 font-medium">{c.currentItem.title}</span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
-        {joined ? (
-          <span className="badge badge-success shrink-0">
-            <Check size={11} />Joined
-          </span>
-        ) : (
-          <button onClick={handleJoin} disabled={joining}
-            className="text-xs px-3 py-1.5 rounded-lg font-medium shrink-0 transition-opacity disabled:opacity-50"
-            style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
-            {joining ? '…' : 'Join'}
-          </button>
+
+        {featured.length > 1 && (
+          <>
+            <button onClick={prev}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full hidden sm:flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border-08)' }}>
+              <ChevronLeft size={16} className="text-themed" />
+            </button>
+            <button onClick={next}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full hidden sm:flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border-08)' }}>
+              <ChevronRight size={16} className="text-themed" />
+            </button>
+          </>
         )}
       </div>
-      {club.description && (
-        <p className="text-xs text-t50 leading-relaxed line-clamp-2">{club.description}</p>
-      )}
-      {club.currentItem && (
-        <div className="text-xs text-t40 flex items-center gap-1.5 pt-1 border-t border-t06">
-          <TypeIcon type={club.type} size={11} />
-          <span className="truncate">Currently: <span className="text-t60">{club.currentItem.title}</span></span>
+
+      {featured.length > 1 && (
+        <div className="flex justify-center gap-1.5">
+          {featured.map((_, i) => (
+            <button key={i} onClick={() => setIdx(i)}
+              className="rounded-full transition-all duration-300"
+              style={{ width: i === idx ? 20 : 6, height: 6, background: i === idx ? accent : 'var(--border-12)' }} />
+          ))}
         </div>
       )}
     </div>
   )
 }
 
-function DiscoverSection({ label, icon, clubs, onJoin, emptyText }) {
-  if (!clubs?.length) return (
-    <div className="rounded-2xl p-4 border border-t06" style={{ background: 'var(--surface)' }}>
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-t40">{icon}</span>
-        <h3 className="text-sm font-semibold text-themed">{label}</h3>
+function DiscoverClubCard({ club, onJoin }) {
+  const [joining, setJoining] = useState(false)
+  const [joined, setJoined] = useState(false)
+  const accent = club.accentColor || TYPE_COLOR[club.type] || 'var(--accent)'
+
+  async function handleJoin() {
+    setJoining(true)
+    try { await post(`/clubs/${club.id}/join`, {}); setJoined(true); onJoin?.() }
+    catch { } finally { setJoining(false) }
+  }
+
+  return (
+    <div className="rounded-2xl overflow-hidden border border-t06 flex flex-col" style={{ background: 'var(--surface)' }}>
+      <div className="h-0.5" style={{ background: `linear-gradient(90deg, ${accent}, ${accent}40)` }} />
+      <div className="p-4 flex flex-col gap-3 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
+              style={{ background: `${accent}15` }}>
+              {club.emoji}
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-sm text-themed truncate">{club.name}</p>
+              <p className="text-xs text-t40 flex items-center gap-1 mt-0.5">
+                <TypeIcon type={club.type} size={11} />
+                <span>{club.memberCount} members</span>
+              </p>
+            </div>
+          </div>
+          {joined ? (
+            <span className="badge badge-success shrink-0"><Check size={11} />Joined</span>
+          ) : (
+            <button onClick={handleJoin} disabled={joining}
+              className="text-xs px-3 py-1.5 rounded-lg font-medium shrink-0 transition-opacity disabled:opacity-50"
+              style={{ background: `${accent}15`, color: accent }}>
+              {joining ? '…' : 'Join'}
+            </button>
+          )}
+        </div>
+        {club.description && (
+          <p className="text-xs text-t50 leading-relaxed line-clamp-2">{club.description}</p>
+        )}
+        {club.currentItem && (
+          <div className="text-xs text-t40 flex items-center gap-1.5 pt-1 border-t border-t06">
+            <TypeIcon type={club.type} size={11} />
+            <span className="truncate">Now: <span className="text-t60">{club.currentItem.title}</span></span>
+          </div>
+        )}
       </div>
-      <p className="text-xs text-t30">{emptyText || 'Nothing here yet.'}</p>
     </div>
   )
+}
+
+function DiscoverSection({ label, icon, clubs, onJoin }) {
+  if (!clubs?.length) return null
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-t40">{icon}</span>
+        <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
+          {icon}
+        </div>
         <h3 className="text-sm font-semibold text-themed">{label}</h3>
-        <span className="text-xs text-t30 ml-auto">{clubs.length} clubs</span>
+        <span className="text-xs text-t30 ml-auto">{clubs.length}</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {clubs.map(c => <DiscoverClubCard key={c.id} club={c} onJoin={onJoin} />)}
@@ -1120,35 +1233,48 @@ function Discover({ onSelectClub: _onSelectClub }) {
       {/* Discovery sections — only show when not searching */}
       {!hasSearch && (
         <>
+          {/* Featured carousel for trending clubs */}
+          {data?.trending?.length > 0 ? (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
+                  <TrendingUp size={13} />
+                </div>
+                <h3 className="text-sm font-semibold text-themed">Trending</h3>
+              </div>
+              <FeaturedCarousel clubs={data.trending} onJoin={refetch} />
+              {/* Remaining trending clubs not in carousel */}
+              {data.trending.length > 4 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {data.trending.slice(4).map(c => <DiscoverClubCard key={c.id} club={c} onJoin={refetch} />)}
+                </div>
+              )}
+            </>
+          ) : (
+            <EmptyState icon={Compass} title="No clubs to discover yet" sub="Be the first — create a public club!" />
+          )}
+
           <DiscoverSection
-            label="Trending"
-            icon={<TrendingUp size={14} />}
-            clubs={data?.trending}
+            label="For You"
+            icon={<Star size={13} />}
+            clubs={data?.forYou}
             onJoin={refetch}
-            emptyText="No public clubs to join yet. Create one!"
           />
-          {data?.forYou?.length > 0 && (
-            <DiscoverSection
-              label="For You"
-              icon={<Star size={14} />}
-              clubs={data.forYou}
-              onJoin={refetch}
-              emptyText="Update your interests to get personalised suggestions."
-            />
-          )}
-          {data?.newClubs?.length > 0 && (
-            <DiscoverSection
-              label="New Clubs"
-              icon={<Plus size={14} />}
-              clubs={data.newClubs}
-              onJoin={refetch}
-              emptyText="No new clubs recently."
-            />
-          )}
+          <DiscoverSection
+            label="New Clubs"
+            icon={<Plus size={13} />}
+            clubs={data?.newClubs}
+            onJoin={refetch}
+          />
+
           {data?.people?.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <Users size={14} className="text-t40" />
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
+                  <Users size={13} />
+                </div>
                 <h3 className="text-sm font-semibold text-themed">People in your clubs</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1164,7 +1290,8 @@ function Discover({ onSelectClub: _onSelectClub }) {
               </div>
             </div>
           )}
-          {!data?.trending?.length && !data?.forYou?.length && !data?.newClubs?.length && (
+
+          {!data?.trending?.length && !data?.forYou?.length && !data?.newClubs?.length && data?.trending !== undefined && (
             <EmptyState icon={Compass} title="All caught up!" sub="You've joined all available clubs. Try creating one." />
           )}
         </>
