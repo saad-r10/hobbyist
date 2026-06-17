@@ -5,6 +5,7 @@ import {
   ArrowLeft, Flame, Plus, Check, Clock, Send, LogOut,
   Users, AlertCircle, Loader2, X, Settings, Search, TrendingUp,
   PlayCircle, CheckCircle2, Sparkles, MessageSquare, Upload,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext.jsx'
@@ -38,15 +39,15 @@ function Stars({ rating, max = 5 }) {
     <div className="flex gap-0.5">
       {Array.from({ length: max }).map((_, i) => (
         <Star key={i} size={11}
-          fill={i < Math.round(rating) ? '#E8A020' : 'none'}
-          stroke={i < Math.round(rating) ? '#E8A020' : 'var(--text-25)'}
+          fill={i < Math.round(rating) ? 'var(--accent)' : 'none'}
+          stroke={i < Math.round(rating) ? 'var(--accent)' : 'var(--text-25)'}
           strokeWidth={1.5} />
       ))}
     </div>
   )
 }
 
-function ProgressRing({ pct, size = 36, stroke = 3, color = '#E8A020' }) {
+function ProgressRing({ pct, size = 36, stroke = 3, color = 'var(--accent)' }) {
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
   const dash = (pct / 100) * c
@@ -59,7 +60,7 @@ function ProgressRing({ pct, size = 36, stroke = 3, color = '#E8A020' }) {
   )
 }
 
-function ProgressBar({ pct, color = '#E8A020' }) {
+function ProgressBar({ pct, color = 'var(--accent)' }) {
   return (
     <div className="h-1.5 rounded-full w-full" style={{ background: 'var(--border-08)' }}>
       <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
@@ -117,16 +118,16 @@ function useApi(fetcher, deps = []) {
 
 // ── Global Feed ──────────────────────────────────────────────────────────
 
-const ACTIVITY_COLORS = { book: '#C47D5A', film: '#6B8DD6', podcast: '#4AADAB', game: '#9B6DB5' }
+const ACTIVITY_COLORS = { book: 'var(--color-book)', film: 'var(--color-film)', podcast: 'var(--color-podcast)', game: 'var(--color-game)' }
 
 const ACTIVITY_META = {
   started_item:  { icon: PlayCircle,   color: 'var(--accent)' },
   finished_item: { icon: CheckCircle2, color: 'var(--success)' },
   rated:         { icon: Star,         color: 'var(--accent)' },
-  joined_club:   { icon: Users,        color: '#6B8DD6' },
-  created_club:  { icon: Sparkles,     color: '#9B6DB5' },
-  posted:        { icon: MessageSquare, color: '#4AADAB' },
-  import:        { icon: Upload,       color: '#C47D5A' },
+  joined_club:   { icon: Users,        color: 'var(--color-film)' },
+  created_club:  { icon: Sparkles,     color: 'var(--color-game)' },
+  posted:        { icon: MessageSquare, color: 'var(--color-podcast)' },
+  import:        { icon: Upload,       color: 'var(--color-book)' },
 }
 
 // Adds an alpha component to a color, whether it's a hex literal or a var(--token)
@@ -327,7 +328,7 @@ function GlobalFeed() {
 // ── My Clubs ─────────────────────────────────────────────────────────────
 
 function ClubCard({ club, onClick }) {
-  const accent = club.accentColor || '#E8A020'
+  const accent = club.accentColor || 'var(--accent)'
   return (
     <button onClick={onClick} className="w-full rounded-2xl p-4 text-left transition-all hover:scale-[1.01] active:scale-[0.99] border border-t06"
       style={{ background: 'var(--surface)' }}>
@@ -405,8 +406,8 @@ function CreateClubModal({ onClose, onCreated }) {
                   className="rounded-xl py-2 text-center text-xs border transition-all"
                   style={{
                     background: form.type === t.id ? 'var(--accent-15)' : 'var(--surface-04)',
-                    borderColor: form.type === t.id ? '#E8A020' : 'var(--border-08)',
-                    color: form.type === t.id ? '#E8A020' : 'var(--text-50)',
+                    borderColor: form.type === t.id ? 'var(--accent)' : 'var(--border-08)',
+                    color: form.type === t.id ? 'var(--accent)' : 'var(--text-50)',
                   }}>
                   <div className="text-base mb-0.5">{t.emoji}</div>
                   {t.label}
@@ -423,7 +424,7 @@ function CreateClubModal({ onClose, onCreated }) {
             <span className="text-sm text-t60">Public club</span>
             <button type="button" onClick={() => setForm(f => ({ ...f, isPublic: !f.isPublic }))}
               className="w-11 h-6 rounded-full transition-colors relative"
-              style={{ background: form.isPublic ? '#E8A020' : 'var(--text-15)' }}>
+              style={{ background: form.isPublic ? 'var(--accent)' : 'var(--text-15)' }}>
               <div className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all"
                 style={{ left: form.isPublic ? '1.375rem' : '0.25rem' }} />
             </button>
@@ -450,7 +451,7 @@ function MyClubs({ onSelectClub }) {
         <h2 className="font-display text-fs-xl font-semibold">Your clubs</h2>
         <button onClick={() => setShowCreate(true)}
           className="flex items-center gap-1.5 text-xs font-medium rounded-lg px-3 py-1.5 transition-colors"
-          style={{ background: 'var(--accent-12)', color: '#E8A020' }}>
+          style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
           <Plus size={13} /> New club
         </button>
       </div>
@@ -763,7 +764,7 @@ function AddItemModal({ clubId, clubType, onClose, onAdded }) {
               {COLORS.map(c => (
                 <button key={c} type="button" onClick={() => setForm(f => ({ ...f, coverColor: c }))}
                   className="w-7 h-7 rounded-lg border-2 transition-all"
-                  style={{ background: c, borderColor: form.coverColor === c ? '#E8A020' : 'transparent' }} />
+                  style={{ background: c, borderColor: form.coverColor === c ? 'var(--accent)' : 'transparent' }} />
               ))}
             </div>
           </div>
@@ -799,7 +800,7 @@ function RateModal({ clubId, itemTitle, onClose, onRated }) {
         <div className="flex gap-2 justify-center mb-4">
           {[1,2,3,4,5].map(v => (
             <button key={v} onMouseEnter={() => setHover(v)} onMouseLeave={() => setHover(0)} onClick={() => setRating(v)}>
-              <Star size={32} fill={(hover || rating) >= v ? '#E8A020' : 'none'} stroke={(hover || rating) >= v ? '#E8A020' : 'var(--text-30)'} strokeWidth={1.5} />
+              <Star size={32} fill={(hover || rating) >= v ? 'var(--accent)' : 'none'} stroke={(hover || rating) >= v ? 'var(--accent)' : 'var(--text-30)'} strokeWidth={1.5} />
             </button>
           ))}
         </div>
@@ -825,7 +826,7 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
     if (pendingSubTab) setSubTab(pendingSubTab.subTab)
   }, [pendingSubTab])
 
-  const accent = club?.accentColor || '#E8A020'
+  const accent = club?.accentColor || 'var(--accent)'
   const isAdmin = club?.myRole === 'admin'
 
   async function updateProgress(val) {
@@ -925,78 +926,190 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
 
 // ── Discover ──────────────────────────────────────────────────────────────
 
-function DiscoverClubCard({ club, onJoin }) {
-  const [joining, setJoining] = useState(false)
-  const [joined, setJoined] = useState(false)
-  const accent = club.accentColor || 'var(--accent)'
+const TYPE_COLOR = { book: 'var(--color-book)', film: 'var(--color-film)', podcast: 'var(--color-podcast)', game: 'var(--color-game)' }
 
-  async function handleJoin() {
-    setJoining(true)
-    try {
-      await post(`/clubs/${club.id}/join`, {})
-      setJoined(true)
-      onJoin?.()
-    } catch { /* show nothing on join failure */ }
-    finally { setJoining(false) }
+function FeaturedCarousel({ clubs, onJoin }) {
+  const [idx, setIdx] = useState(0)
+  const [joined, setJoined] = useState({})
+  const [joining, setJoining] = useState(null)
+  const touchX = useRef(null)
+  const featured = clubs?.slice(0, 4) || []
+  if (!featured.length) return null
+
+  const accent = (featured[idx]?.accentColor) || TYPE_COLOR[featured[idx]?.type] || 'var(--accent)'
+
+  async function handleJoin(club) {
+    if (joined[club.id]) return
+    setJoining(club.id)
+    try { await post(`/clubs/${club.id}/join`, {}); setJoined(j => ({ ...j, [club.id]: true })); onJoin?.() }
+    catch { /* join failure is silent */ } finally { setJoining(null) }
+  }
+
+  const prev = () => setIdx(i => (i - 1 + featured.length) % featured.length)
+  const next = () => setIdx(i => (i + 1) % featured.length)
+  const onTouchStart = e => { touchX.current = e.touches[0].clientX }
+  const onTouchEnd = e => {
+    if (touchX.current == null) return
+    const dx = touchX.current - e.changedTouches[0].clientX
+    if (dx > 50) next(); else if (dx < -50) prev()
+    touchX.current = null
   }
 
   return (
-    <div className="rounded-2xl p-4 border border-t06 flex flex-col gap-3" style={{ background: 'var(--surface)' }}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
-            style={{ background: `${accent}18` }}>
-            {club.emoji}
-          </div>
-          <div className="min-w-0">
-            <p className="font-semibold text-sm text-themed truncate">{club.name}</p>
-            <p className="text-xs text-t40 flex items-center gap-1 mt-0.5">
-              <TypeIcon type={club.type} size={11} />
-              <span>{club.memberCount} members</span>
-            </p>
-          </div>
+    <div className="space-y-3">
+      <div className="relative overflow-hidden rounded-2xl select-none">
+        <div
+          className="flex"
+          style={{ transform: `translateX(-${idx * 100}%)`, transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1)' }}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          {featured.map(c => {
+            const a = c.accentColor || TYPE_COLOR[c.type] || 'var(--accent)'
+            const isJoined = joined[c.id]
+            const isJoining = joining === c.id
+            return (
+              <div key={c.id} className="min-w-full rounded-2xl overflow-hidden border border-t06"
+                style={{ background: 'var(--surface2)' }}>
+                <div className="h-0.5" style={{ background: `linear-gradient(90deg, ${a}, ${a}40)` }} />
+                <div className="p-5" style={{ background: `linear-gradient(135deg, ${a}20 0%, ${a}06 100%)` }}>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0"
+                      style={{ background: `${a}18`, border: `1px solid ${a}28` }}>
+                      {c.emoji}
+                    </div>
+                    {isJoined ? (
+                      <span className="badge badge-success"><Check size={11} />Joined</span>
+                    ) : (
+                      <button onClick={() => handleJoin(c)} disabled={isJoining}
+                        className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity disabled:opacity-50"
+                        style={{ background: a, color: '#fff' }}>
+                        {isJoining ? '…' : 'Join'}
+                      </button>
+                    )}
+                  </div>
+                  <h2 className="font-display text-xl font-bold text-themed mb-2 leading-tight">{c.name}</h2>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
+                      style={{ background: `${a}18`, color: a }}>
+                      <TypeIcon type={c.type} size={11} />
+                      <span className="capitalize">{c.type}</span>
+                    </span>
+                    <span className="text-xs text-t40">{c.memberCount} members</span>
+                  </div>
+                  {c.description && (
+                    <p className="text-sm text-t60 leading-relaxed line-clamp-2 mb-4">{c.description}</p>
+                  )}
+                  {c.currentItem && (
+                    <div className="flex items-center gap-2 pt-3 border-t border-t06">
+                      <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
+                        style={{ background: `${a}18` }}>
+                        <TypeIcon type={c.type} size={10} />
+                      </div>
+                      <p className="text-xs text-t50 truncate">
+                        Now: <span className="text-t70 font-medium">{c.currentItem.title}</span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
-        {joined ? (
-          <span className="badge badge-success shrink-0">
-            <Check size={11} />Joined
-          </span>
-        ) : (
-          <button onClick={handleJoin} disabled={joining}
-            className="text-xs px-3 py-1.5 rounded-lg font-medium shrink-0 transition-opacity disabled:opacity-50"
-            style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
-            {joining ? '…' : 'Join'}
-          </button>
+
+        {featured.length > 1 && (
+          <>
+            <button onClick={prev}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full hidden sm:flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border-08)' }}>
+              <ChevronLeft size={16} className="text-themed" />
+            </button>
+            <button onClick={next}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full hidden sm:flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border-08)' }}>
+              <ChevronRight size={16} className="text-themed" />
+            </button>
+          </>
         )}
       </div>
-      {club.description && (
-        <p className="text-xs text-t50 leading-relaxed line-clamp-2">{club.description}</p>
-      )}
-      {club.currentItem && (
-        <div className="text-xs text-t40 flex items-center gap-1.5 pt-1 border-t border-t06">
-          <TypeIcon type={club.type} size={11} />
-          <span className="truncate">Currently: <span className="text-t60">{club.currentItem.title}</span></span>
+
+      {featured.length > 1 && (
+        <div className="flex justify-center gap-1.5">
+          {featured.map((_, i) => (
+            <button key={i} onClick={() => setIdx(i)}
+              className="rounded-full transition-all duration-300"
+              style={{ width: i === idx ? 20 : 6, height: 6, background: i === idx ? accent : 'var(--border-12)' }} />
+          ))}
         </div>
       )}
     </div>
   )
 }
 
-function DiscoverSection({ label, icon, clubs, onJoin, emptyText }) {
-  if (!clubs?.length) return (
-    <div className="rounded-2xl p-4 border border-t06" style={{ background: 'var(--surface)' }}>
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-t40">{icon}</span>
-        <h3 className="text-sm font-semibold text-themed">{label}</h3>
+function DiscoverClubCard({ club, onJoin }) {
+  const [joining, setJoining] = useState(false)
+  const [joined, setJoined] = useState(false)
+  const accent = club.accentColor || TYPE_COLOR[club.type] || 'var(--accent)'
+
+  async function handleJoin() {
+    setJoining(true)
+    try { await post(`/clubs/${club.id}/join`, {}); setJoined(true); onJoin?.() }
+    catch { /* join failure is silent */ } finally { setJoining(false) }
+  }
+
+  return (
+    <div className="rounded-2xl overflow-hidden border border-t06 flex flex-col" style={{ background: 'var(--surface)' }}>
+      <div className="h-0.5" style={{ background: `linear-gradient(90deg, ${accent}, ${accent}40)` }} />
+      <div className="p-4 flex flex-col gap-3 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
+              style={{ background: `${accent}15` }}>
+              {club.emoji}
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-sm text-themed truncate">{club.name}</p>
+              <p className="text-xs text-t40 flex items-center gap-1 mt-0.5">
+                <TypeIcon type={club.type} size={11} />
+                <span>{club.memberCount} members</span>
+              </p>
+            </div>
+          </div>
+          {joined ? (
+            <span className="badge badge-success shrink-0"><Check size={11} />Joined</span>
+          ) : (
+            <button onClick={handleJoin} disabled={joining}
+              className="text-xs px-3 py-1.5 rounded-lg font-medium shrink-0 transition-opacity disabled:opacity-50"
+              style={{ background: `${accent}15`, color: accent }}>
+              {joining ? '…' : 'Join'}
+            </button>
+          )}
+        </div>
+        {club.description && (
+          <p className="text-xs text-t50 leading-relaxed line-clamp-2">{club.description}</p>
+        )}
+        {club.currentItem && (
+          <div className="text-xs text-t40 flex items-center gap-1.5 pt-1 border-t border-t06">
+            <TypeIcon type={club.type} size={11} />
+            <span className="truncate">Now: <span className="text-t60">{club.currentItem.title}</span></span>
+          </div>
+        )}
       </div>
-      <p className="text-xs text-t30">{emptyText || 'Nothing here yet.'}</p>
     </div>
   )
+}
+
+function DiscoverSection({ label, icon, clubs, onJoin }) {
+  if (!clubs?.length) return null
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-t40">{icon}</span>
+        <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
+          {icon}
+        </div>
         <h3 className="text-sm font-semibold text-themed">{label}</h3>
-        <span className="text-xs text-t30 ml-auto">{clubs.length} clubs</span>
+        <span className="text-xs text-t30 ml-auto">{clubs.length}</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {clubs.map(c => <DiscoverClubCard key={c.id} club={c} onJoin={onJoin} />)}
@@ -1120,35 +1233,48 @@ function Discover({ onSelectClub: _onSelectClub }) {
       {/* Discovery sections — only show when not searching */}
       {!hasSearch && (
         <>
+          {/* Featured carousel for trending clubs */}
+          {data?.trending?.length > 0 ? (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
+                  <TrendingUp size={13} />
+                </div>
+                <h3 className="text-sm font-semibold text-themed">Trending</h3>
+              </div>
+              <FeaturedCarousel clubs={data.trending} onJoin={refetch} />
+              {/* Remaining trending clubs not in carousel */}
+              {data.trending.length > 4 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {data.trending.slice(4).map(c => <DiscoverClubCard key={c.id} club={c} onJoin={refetch} />)}
+                </div>
+              )}
+            </>
+          ) : (
+            <EmptyState icon={Compass} title="No clubs to discover yet" sub="Be the first — create a public club!" />
+          )}
+
           <DiscoverSection
-            label="Trending"
-            icon={<TrendingUp size={14} />}
-            clubs={data?.trending}
+            label="For You"
+            icon={<Star size={13} />}
+            clubs={data?.forYou}
             onJoin={refetch}
-            emptyText="No public clubs to join yet. Create one!"
           />
-          {data?.forYou?.length > 0 && (
-            <DiscoverSection
-              label="For You"
-              icon={<Star size={14} />}
-              clubs={data.forYou}
-              onJoin={refetch}
-              emptyText="Update your interests to get personalised suggestions."
-            />
-          )}
-          {data?.newClubs?.length > 0 && (
-            <DiscoverSection
-              label="New Clubs"
-              icon={<Plus size={14} />}
-              clubs={data.newClubs}
-              onJoin={refetch}
-              emptyText="No new clubs recently."
-            />
-          )}
+          <DiscoverSection
+            label="New Clubs"
+            icon={<Plus size={13} />}
+            clubs={data?.newClubs}
+            onJoin={refetch}
+          />
+
           {data?.people?.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <Users size={14} className="text-t40" />
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
+                  <Users size={13} />
+                </div>
                 <h3 className="text-sm font-semibold text-themed">People in your clubs</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1164,7 +1290,8 @@ function Discover({ onSelectClub: _onSelectClub }) {
               </div>
             </div>
           )}
-          {!data?.trending?.length && !data?.forYou?.length && !data?.newClubs?.length && (
+
+          {!data?.trending?.length && !data?.forYou?.length && !data?.newClubs?.length && data?.trending !== undefined && (
             <EmptyState icon={Compass} title="All caught up!" sub="You've joined all available clubs. Try creating one." />
           )}
         </>
@@ -1193,7 +1320,7 @@ function Leaderboard() {
         {PERIODS.map(p => (
           <button key={p} onClick={() => setPeriod(p)}
             className="px-4 py-1.5 text-xs font-medium rounded-lg capitalize transition-all"
-            style={period === p ? { background: '#E8A020', color: 'var(--bg)' } : { color: 'var(--text-50)' }}>
+            style={period === p ? { background: 'var(--accent)', color: 'var(--accent-text)' } : { color: 'var(--text-50)' }}>
             {p === 'all' ? 'All time' : p.charAt(0).toUpperCase() + p.slice(1)}
           </button>
         ))}
@@ -1235,14 +1362,14 @@ function Leaderboard() {
                 <Flame size={12} fill="#E87070" /> {entry.streak}
               </div>
             )}
-            <span className="text-sm font-semibold" style={{ color: '#E8A020' }}>{entry.score}</span>
+            <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>{entry.score}</span>
           </div>
         ))}
       </div>
 
       {myRank > 10 && (
         <div className="mt-4 rounded-xl px-4 py-3 text-center border border-[#E8A020]/20" style={{ background: 'var(--accent-06)' }}>
-          <p className="text-sm text-t60">You're ranked <span style={{ color: '#E8A020' }}>#{myRank}</span> with {myScore} points</p>
+          <p className="text-sm text-t60">You're ranked <span style={{ color: 'var(--accent)' }}>#{myRank}</span> with {myScore} points</p>
           <p className="text-xs text-t30 mt-0.5">Keep engaging to climb the board!</p>
         </div>
       )}
@@ -1263,17 +1390,17 @@ function Analytics() {
   const { summary, monthly, types, heatmap, recentRatings } = data || {}
 
   const maxMonthly = Math.max(...(monthly || []).map(m => m.total), 1)
-  const TYPE_COLORS = { book: '#C47D5A', film: '#6B8DD6', podcast: '#4AADAB', game: '#9B6DB5' }
+  const TYPE_COLORS = { book: 'var(--color-book)', film: 'var(--color-film)', podcast: 'var(--color-podcast)', game: 'var(--color-game)' }
 
   return (
     <div className="space-y-4">
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: 'Finished', val: summary?.finished ?? 0, color: '#E8A020' },
-          { label: 'Avg rating', val: summary?.avgRating ? `${summary.avgRating}★` : '—', color: '#7A9E7E' },
-          { label: 'Clubs', val: summary?.clubs ?? 0, color: '#6B8DD6' },
-          { label: 'This year', val: summary?.thisYear ?? 0, color: '#C47D5A' },
+          { label: 'Finished', val: summary?.finished ?? 0, color: 'var(--accent)' },
+          { label: 'Avg rating', val: summary?.avgRating ? `${summary.avgRating}★` : '—', color: 'var(--success)' },
+          { label: 'Clubs', val: summary?.clubs ?? 0, color: 'var(--color-film)' },
+          { label: 'This year', val: summary?.thisYear ?? 0, color: 'var(--color-book)' },
         ].map(s => (
           <div key={s.label} className="rounded-2xl p-4 border border-t06" style={{ background: 'var(--surface)' }}>
             <p className="text-2xl font-bold" style={{ color: s.color }}>{s.val}</p>
@@ -1290,7 +1417,7 @@ function Analytics() {
             {monthly.map((m, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1">
                 <div className="w-full rounded-t-lg transition-all duration-500"
-                  style={{ height: `${(m.total / maxMonthly) * 100}%`, background: '#E8A020', minHeight: m.total > 0 ? 4 : 0, opacity: 0.8 }} />
+                  style={{ height: `${(m.total / maxMonthly) * 100}%`, background: 'var(--accent)', minHeight: m.total > 0 ? 4 : 0, opacity: 0.8 }} />
                 <span className="text-xs text-t30">{m.month}</span>
               </div>
             ))}
@@ -1306,7 +1433,7 @@ function Analytics() {
             <div className="w-24 h-24 rounded-full shrink-0" style={{
               background: `conic-gradient(${types.map((t, i, arr) => {
                 const start = arr.slice(0, i).reduce((s, x) => s + x.pct, 0)
-                return `${TYPE_COLORS[t.type] || '#E8A020'} ${start}% ${start + t.pct}%`
+                return `${TYPE_COLORS[t.type] || 'var(--accent)'} ${start}% ${start + t.pct}%`
               }).join(', ')})`
             }}>
               <div className="w-full h-full rounded-full" style={{ margin: '14px', width: 'calc(100% - 28px)', height: 'calc(100% - 28px)', background: 'var(--surface)' }} />
@@ -1349,7 +1476,7 @@ function Analytics() {
           <div className="space-y-3">
             {recentRatings.map(r => (
               <div key={r.id} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: TYPE_COLORS[r.type] + '30' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: withAlpha(TYPE_COLORS[r.type] || 'var(--accent)', 19) }}>
                   <TypeIcon type={r.type} size={14} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -1375,8 +1502,8 @@ function Analytics() {
 const SOURCE_META = {
   letterboxd: { label: 'Letterboxd', color: '#00AC34' },
   goodreads:  { label: 'Goodreads',  color: '#553B08' },
-  manual:     { label: 'Manual',     color: '#E8A020' },
-  club:       { label: 'Clubs',      color: '#6B8DD6' },
+  manual:     { label: 'Manual',     color: 'var(--accent)' },
+  club:       { label: 'Clubs',      color: 'var(--color-film)' },
 }
 
 function Profile({ onLogout }) {
@@ -1454,7 +1581,7 @@ function Profile({ onLogout }) {
             { val: analytics?.summary?.avgRating ? `${analytics.summary.avgRating}★` : '—', label: 'Avg rating' },
           ].map((s, i) => (
             <div key={i} className="text-center">
-              <p className="text-xl font-bold" style={{ color: '#E8A020' }}>{s.val}</p>
+              <p className="text-xl font-bold" style={{ color: 'var(--accent)' }}>{s.val}</p>
               <p className="text-xs text-t40">{s.label}</p>
             </div>
           ))}
@@ -1488,7 +1615,7 @@ function Profile({ onLogout }) {
           </div>
           <button onClick={() => setShowImport(true)}
             className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-            style={{ background: 'var(--accent-12)', color: '#E8A020' }}>
+            style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
             <Plus size={12} /> Import
           </button>
         </div>
@@ -1496,7 +1623,7 @@ function Profile({ onLogout }) {
         {Object.keys(importSources).length > 0 ? (
           <div className="space-y-2">
             {Object.entries(importSources).map(([source, count]) => {
-              const meta = SOURCE_META[source] || { label: source, color: '#E8A020' }
+              const meta = SOURCE_META[source] || { label: source, color: 'var(--accent)' }
               return (
                 <div key={source} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1521,11 +1648,11 @@ function Profile({ onLogout }) {
           <h3 className="text-sm font-semibold text-t80 mb-3">Recently rated</h3>
           <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
             {analytics.recentRatings.filter(r => r.rating != null).map(r => {
-              const color = { book: '#C47D5A', film: '#6B8DD6', podcast: '#4AADAB', game: '#9B6DB5' }[r.type] || '#E8A020'
+              const color = { book: 'var(--color-book)', film: 'var(--color-film)', podcast: 'var(--color-podcast)', game: 'var(--color-game)' }[r.type] || 'var(--accent)'
               const sourceMeta = SOURCE_META[r.source]
               return (
                 <div key={r.id} className="shrink-0 w-28 rounded-xl overflow-hidden border border-t06">
-                  <div className="h-20 flex items-center justify-center relative" style={{ background: color + '30' }}>
+                  <div className="h-20 flex items-center justify-center relative" style={{ background: withAlpha(color, 19) }}>
                     <TypeIcon type={r.type} size={20} />
                     {sourceMeta && r.source !== 'club' && (
                       <div className="absolute bottom-1.5 right-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
@@ -1652,7 +1779,7 @@ export default function App() {
           {TABS.map(({ id, label, Icon }) => (
             <button key={id} onClick={() => handleTabChange(id)}
               className="mobile-nav-link flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[44px] relative z-10"
-              style={{ color: tab === id ? '#E8A020' : 'var(--text-35)' }}>
+              style={{ color: tab === id ? 'var(--accent)' : 'var(--text-35)' }}>
               <span className="mobile-nav-icon-wrap flex flex-col items-center gap-0.5">
                 <Icon size={20} />
                 <span className="text-[10px] font-medium">{label}</span>
