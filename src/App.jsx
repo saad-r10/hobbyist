@@ -942,7 +942,7 @@ function FeaturedCarousel({ clubs, onJoin }) {
     if (joined[club.id]) return
     setJoining(club.id)
     try { await post(`/clubs/${club.id}/join`, {}); setJoined(j => ({ ...j, [club.id]: true })); onJoin?.() }
-    catch { } finally { setJoining(null) }
+    catch { /* join failure is silent */ } finally { setJoining(null) }
   }
 
   const prev = () => setIdx(i => (i - 1 + featured.length) % featured.length)
@@ -1054,7 +1054,7 @@ function DiscoverClubCard({ club, onJoin }) {
   async function handleJoin() {
     setJoining(true)
     try { await post(`/clubs/${club.id}/join`, {}); setJoined(true); onJoin?.() }
-    catch { } finally { setJoining(false) }
+    catch { /* join failure is silent */ } finally { setJoining(false) }
   }
 
   return (
