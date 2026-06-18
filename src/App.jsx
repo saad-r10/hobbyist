@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   BookOpen, Film, Mic, Gamepad2, Home, Compass, Trophy,
-  BarChart2, User, Heart, MessageCircle, Star,
+  BarChart2, User, MessageCircle, Star,
   ArrowLeft, Flame, Plus, Check, Clock, Send, LogOut,
   Users, AlertCircle, Loader2, X, Settings, Search, TrendingUp,
   PlayCircle, CheckCircle2, Sparkles, MessageSquare, Upload,
@@ -170,7 +170,7 @@ function ActivityBadge({ type, accent, size = 22 }) {
   )
 }
 
-const QUICK_REACTIONS = ['👍', '❤️', '🎉', '👏']
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '🎉', '😮']
 
 function InlineReactionBar({ item }) {
   const [active, setActive] = useState(null)
@@ -205,6 +205,86 @@ function InlineReactionBar({ item }) {
         <MessageCircle size={13} />
         {item.commentCount > 0 ? item.commentCount : ''}
       </button>
+    </div>
+  )
+}
+
+function EmojiPickerPopover({ onPick, onClose, above = true }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) onClose() }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  return (
+    <div ref={ref}
+      className="absolute left-0 z-50 flex gap-0.5 p-1 rounded-xl shadow-xl border border-t12"
+      style={{
+        background: 'var(--surface)',
+        ...(above ? { bottom: '100%', marginBottom: 4 } : { top: '100%', marginTop: 4 }),
+      }}>
+      {QUICK_REACTIONS.map(emoji => (
+        <button key={emoji} onClick={() => onPick(emoji)}
+          className="w-8 h-8 flex items-center justify-center text-base rounded-lg transition-transform hover:scale-125 active:scale-95"
+          style={{ background: 'transparent' }}
+          title={emoji}>
+          {emoji}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function applyReactionToggle(reactions, emoji, reacted) {
+  const exists = reactions.find(r => r.emoji === emoji)
+  if (reacted) {
+    if (exists) return reactions.map(r => r.emoji === emoji ? { ...r, count: r.count + 1, reactedByMe: true } : r)
+    return [...reactions, { emoji, count: 1, reactedByMe: true, users: ['You'] }]
+  } else {
+    return reactions
+      .map(r => r.emoji === emoji ? { ...r, count: r.count - 1, reactedByMe: false } : r)
+      .filter(r => r.count > 0)
+  }
+}
+
+function ReactionBar({ reactions = [], onReact, compact = false }) {
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  return (
+    <div className="flex items-center gap-1 flex-wrap relative">
+      {reactions.map(r => (
+        <button key={r.emoji} onClick={() => onReact(r.emoji)}
+          title={r.users?.join(', ')}
+          className="flex items-center gap-0.5 rounded-full text-xs transition-all hover:scale-110 active:scale-95"
+          style={{
+            padding: compact ? '1px 6px' : '2px 8px',
+            background: r.reactedByMe ? 'var(--accent-15)' : 'var(--surface2)',
+            border: `1px solid ${r.reactedByMe ? 'var(--accent)' : 'transparent'}`,
+            opacity: r.reactedByMe ? 1 : 0.75,
+          }}>
+          <span>{r.emoji}</span>
+          <span className="ml-0.5 text-t60">{r.count}</span>
+        </button>
+      ))}
+      <div className="relative">
+        <button onClick={() => setPickerOpen(p => !p)}
+          className="flex items-center justify-center rounded-full text-t30 hover:text-t60 transition-all"
+          style={{
+            width: compact ? 20 : 24,
+            height: compact ? 20 : 24,
+            background: pickerOpen ? 'var(--surface2)' : 'transparent',
+            fontSize: compact ? 11 : 13,
+          }}>
+          +
+        </button>
+        {pickerOpen && (
+          <EmojiPickerPopover
+            onPick={(emoji) => { onReact(emoji); setPickerOpen(false) }}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
+      </div>
     </div>
   )
 }
@@ -514,14 +594,24 @@ function DiscussionTab({ clubId, accent }) {
     finally { setPosting(false) }
   }
 
-  async function toggleLike(postId) {
+  async function toggleReaction(postId, targetType, targetId, emoji) {
+    const url = targetType === 'post'
+      ? `/posts/${targetId}/react`
+      : `/posts/${postId}/replies/${targetId}/react`
     try {
-      const res = await post(`/posts/${postId}/like`, {})
-      setData(prev => prev.map(p => p.id === postId
-        ? { ...p, likedByMe: res.liked, likeCount: p.likeCount + (res.liked ? 1 : -1) }
-        : p
-      ))
-    } catch { /* optimistic like already applied */ }
+      const res = await post(url, { emoji })
+      setData(prev => prev.map(p => {
+        if (targetType === 'post' && p.id === targetId) {
+          return { ...p, reactions: applyReactionToggle(p.reactions, emoji, res.reacted) }
+        }
+        if (targetType === 'reply' && p.id === postId) {
+          return { ...p, replies: p.replies.map(r =>
+            r.id === targetId ? { ...r, reactions: applyReactionToggle(r.reactions, emoji, res.reacted) } : r
+          )}
+        }
+        return p
+      }))
+    } catch { /* ignore */ }
   }
 
   async function submitReply(postId) {
@@ -581,10 +671,19 @@ function DiscussionTab({ clubId, accent }) {
           {expanded[p.id] && p.replies.map((r, i) => (
             <div key={i} className="flex gap-2.5 mb-2 pl-4 border-l-2" style={{ borderColor: `${accent}30` }}>
               <Avatar user={r.user} size={24} />
-              <div>
+              <div className="flex-1 min-w-0">
                 <span className="font-medium text-xs" style={{ color: accent }}>{r.user?.displayName}</span>
                 <span className="text-xs text-t30 ml-1.5">{r.time}</span>
                 <p className="text-sm text-t70 mt-0.5">{r.text}</p>
+                {r.reactions !== undefined && (
+                  <div className="mt-1.5">
+                    <ReactionBar
+                      reactions={r.reactions || []}
+                      onReact={(emoji) => toggleReaction(p.id, 'reply', r.id, emoji)}
+                      compact
+                    />
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -598,27 +697,25 @@ function DiscussionTab({ clubId, accent }) {
             </div>
           )}
 
-          <div className="flex items-center gap-4 pt-3 border-t border-t06 mt-2">
-            <button onClick={() => toggleLike(p.id)}
-              className="flex items-center gap-1.5 text-xs transition-colors"
-              style={{ color: p.likedByMe ? '#E87070' : 'var(--text-35)' }}>
-              <Heart size={12} fill={p.likedByMe ? '#E87070' : 'none'} />
-              {p.likeCount > 0 && p.likeCount}
-            </button>
+          <div className="flex items-center gap-3 pt-3 border-t border-t06 mt-2">
+            <ReactionBar
+              reactions={p.reactions || []}
+              onReact={(emoji) => toggleReaction(p.id, 'post', p.id, emoji)}
+            />
             <button onClick={() => setExpanded(e => ({ ...e, [p.id]: !e[p.id] }))}
-              className="flex items-center gap-1.5 text-xs text-t40 hover:text-t70 transition-colors">
+              className="flex items-center gap-1.5 text-xs text-t40 hover:text-t70 transition-colors ml-auto">
               <MessageCircle size={12} />
               {p.replyCount > 0 ? `${p.replyCount} ${p.replyCount === 1 ? 'reply' : 'replies'}` : 'Reply'}
             </button>
             {p.replyCount > 0 && (
               <button onClick={() => { setExpanded(e => ({ ...e, [p.id]: !e[p.id] })); setReplyingTo(p.id) }}
-                className="text-xs text-t30 hover:text-t60 ml-auto transition-colors">
-                {expanded[p.id] ? 'Hide' : 'Show replies'}
+                className="text-xs text-t30 hover:text-t60 transition-colors">
+                {expanded[p.id] ? 'Hide' : 'Show'}
               </button>
             )}
             {!expanded[p.id] && (
               <button onClick={() => setReplyingTo(r => r === p.id ? null : p.id)}
-                className="text-xs ml-auto transition-colors"
+                className="text-xs transition-colors"
                 style={{ color: replyingTo === p.id ? accent : 'var(--text-30)' }}>
                 Reply
               </button>
@@ -634,6 +731,7 @@ function ChatTab({ clubId, currentUser, accent }) {
   const { data: messages, loading, error, setData } = useApi(() => get(`/chat/${clubId}`), [clubId])
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [hoveredMsg, setHoveredMsg] = useState(null)
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -644,7 +742,7 @@ function ChatTab({ clubId, currentUser, accent }) {
     e.preventDefault()
     if (!text.trim() || sending) return
     setSending(true)
-    const optimistic = { id: Date.now(), text: text.trim(), time: 'just now', user: currentUser, createdAt: new Date().toISOString() }
+    const optimistic = { id: Date.now(), text: text.trim(), time: 'just now', user: currentUser, createdAt: new Date().toISOString(), reactions: [] }
     setData(prev => [...(prev || []), optimistic])
     setText('')
     try {
@@ -657,6 +755,16 @@ function ChatTab({ clubId, currentUser, accent }) {
     } finally { setSending(false) }
   }
 
+  async function toggleChatReaction(msgId, emoji) {
+    try {
+      const res = await post(`/chat/messages/${msgId}/react`, { emoji })
+      setData(prev => prev.map(m => m.id === msgId
+        ? { ...m, reactions: applyReactionToggle(m.reactions || [], emoji, res.reacted) }
+        : m
+      ))
+    } catch { /* ignore */ }
+  }
+
   if (loading) return <div className="flex items-center justify-center py-12"><Spinner /></div>
   if (error) return <ErrorState message={error} />
 
@@ -667,16 +775,39 @@ function ChatTab({ clubId, currentUser, accent }) {
       <div className="flex-1 overflow-y-auto space-y-3 pr-1 no-scrollbar">
         {!messages?.length && <EmptyState icon={MessageCircle} title="No messages yet" sub="Say hello to your clubmates!" />}
         {messages?.map(msg => (
-          <div key={msg.id} className={`flex items-end gap-2 ${isMe(msg) ? 'flex-row-reverse' : ''}`}>
+          <div key={msg.id}
+            className={`flex items-end gap-2 group ${isMe(msg) ? 'flex-row-reverse' : ''}`}
+            onMouseEnter={() => setHoveredMsg(msg.id)}
+            onMouseLeave={() => setHoveredMsg(null)}>
             {!isMe(msg) && <Avatar user={msg.user} size={28} />}
-            <div className="max-w-[75%]">
+            <div className={`max-w-[75%] ${isMe(msg) ? 'items-end' : 'items-start'} flex flex-col`}>
               {!isMe(msg) && <p className="text-xs mb-1 ml-1" style={{ color: msg.user?.avatarColor || accent }}>{msg.user?.displayName}</p>}
-              <div className="rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed"
-                style={isMe(msg)
-                  ? { background: accent, color: 'var(--bg)' }
-                  : { background: 'var(--surface-07)', color: 'var(--text)' }}>
-                {msg.text}
+              <div className="flex items-center gap-1.5" style={{ flexDirection: isMe(msg) ? 'row-reverse' : 'row' }}>
+                <div className="rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed"
+                  style={isMe(msg)
+                    ? { background: accent, color: 'var(--bg)' }
+                    : { background: 'var(--surface-07)', color: 'var(--text)' }}>
+                  {msg.text}
+                </div>
+                {hoveredMsg === msg.id && msg.id && (
+                  <div className="relative shrink-0">
+                    <EmojiPickerPopover
+                      onPick={(emoji) => toggleChatReaction(msg.id, emoji)}
+                      onClose={() => setHoveredMsg(null)}
+                      above
+                    />
+                  </div>
+                )}
               </div>
+              {msg.reactions?.length > 0 && (
+                <div className={`mt-1 ${isMe(msg) ? 'mr-1' : 'ml-1'}`}>
+                  <ReactionBar
+                    reactions={msg.reactions}
+                    onReact={(emoji) => toggleChatReaction(msg.id, emoji)}
+                    compact
+                  />
+                </div>
+              )}
               <p className={`text-xs mt-1 text-t25 ${isMe(msg) ? 'text-right mr-1' : 'ml-1'}`}>{msg.time}</p>
             </div>
           </div>
