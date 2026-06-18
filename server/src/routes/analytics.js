@@ -8,6 +8,19 @@ const prisma = new PrismaClient()
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
+function calcLongestStreak(dayMap) {
+  const sorted = Object.keys(dayMap).sort()
+  let maxStreak = 0, cur = 0
+  for (let i = 0; i < sorted.length; i++) {
+    if (i === 0) { cur = 1 } else {
+      const diff = Math.round((new Date(sorted[i]) - new Date(sorted[i - 1])) / 86400000)
+      cur = diff === 1 ? cur + 1 : 1
+    }
+    if (cur > maxStreak) maxStreak = cur
+  }
+  return maxStreak
+}
+
 router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const userId = req.userId
 
@@ -117,12 +130,18 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
     importSources[r.source] = (importSources[r.source] || 0) + 1
   })
 
+  const thisYearItems = allRatings.filter(r => new Date(r.createdAt).getFullYear() === now.getFullYear())
+  const thisYearRated = thisYearItems.filter(r => r.rating != null).sort((a, b) => b.rating - a.rating)
+  const typeThisYear = { book: 0, film: 0, podcast: 0, game: 0 }
+  thisYearItems.forEach(r => { if (typeThisYear[r.type] !== undefined) typeThisYear[r.type]++ })
+  const topTypeThisYear = Object.entries(typeThisYear).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1])[0]?.[0] || null
+
   res.json({
     summary: {
       finished: allRatings.length,
       avgRating: Number(avgRating),
       clubs: memberships,
-      thisYear: allRatings.filter(r => new Date(r.createdAt).getFullYear() === now.getFullYear()).length,
+      thisYear: thisYearItems.length,
       imported: personalRatings.length,
     },
     monthly,
@@ -130,6 +149,14 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
     heatmap,
     recentRatings: allRatings.slice(0, 8),
     importSources,
+    yearlyWrapup: {
+      year: now.getFullYear(),
+      thisYear: thisYearItems.length,
+      longestStreak: calcLongestStreak(dayMap),
+      topRated: thisYearRated[0] ? { title: thisYearRated[0].title, rating: thisYearRated[0].rating, type: thisYearRated[0].type } : null,
+      topTypeThisYear,
+      byTypeThisYear: typeThisYear,
+    },
   })
 }))
 
