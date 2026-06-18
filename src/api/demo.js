@@ -23,10 +23,10 @@ const SEED_USERS = [
 
 const SEED_CLUBS = [
   { id: 1, name: 'The Midnight Readers', type: 'book', emoji: '📚', accentColor: '#C47D5A', bgColor: '#2A1A0E', isPublic: true, isMember: true, myRole: 'admin', description: 'A cozy literary club for those who read past their bedtime.', memberCount: 6,
-    currentItem: { id: 1, title: 'Tomorrow, and Tomorrow, and Tomorrow', subtitle: 'Gabrielle Zevin', description: "A dazzling novel about creativity, failure, and the lifelong bonds forged in the pursuit of making something from nothing.", coverColor: '#5A3520', type: 'book', myProgress: 72 },
+    currentItem: { id: 1, title: 'Tomorrow, and Tomorrow, and Tomorrow', subtitle: 'Gabrielle Zevin', description: "A dazzling novel about creativity, failure, and the lifelong bonds forged in the pursuit of making something from nothing.", coverColor: '#5A3520', coverUrl: 'https://covers.openlibrary.org/b/isbn/9780593321201-L.jpg', type: 'book', myProgress: 72 },
     pastItems: [
-      { id: 2, title: 'The Midnight Library', subtitle: 'Matt Haig', coverColor: '#1A2850', type: 'book', avgRating: 4.1, ratingCount: 4 },
-      { id: 3, title: 'All the Light We Cannot See', subtitle: 'Anthony Doerr', coverColor: '#3A2020', type: 'book', avgRating: 4.5, ratingCount: 5 },
+      { id: 2, title: 'The Midnight Library', subtitle: 'Matt Haig', coverColor: '#1A2850', coverUrl: 'https://covers.openlibrary.org/b/isbn/9780525559474-L.jpg', type: 'book', avgRating: 4.1, ratingCount: 4 },
+      { id: 3, title: 'All the Light We Cannot See', subtitle: 'Anthony Doerr', coverColor: '#3A2020', coverUrl: 'https://covers.openlibrary.org/b/isbn/9781476746586-L.jpg', type: 'book', avgRating: 4.5, ratingCount: 5 },
     ],
     members: [
       { user: SEED_USERS[0], role: 'admin', progress: 72 }, { user: SEED_USERS[1], role: 'member', progress: 100 },

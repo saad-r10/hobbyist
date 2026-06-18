@@ -75,6 +75,7 @@ model ClubItem {
   subtitle    String    @default("")
   description String    @default("")
   coverColor  String    @default("#162030")
+  coverUrl    String?
   type        String
   status      String    @default("current")
   addedAt     DateTime  @default(now())
@@ -192,6 +193,7 @@ model PersonalRating {
   rating      Float?
   review      String    @default("")
   source      String    @default("manual") // letterboxd, goodreads, manual
+  coverUrl    String?
   consumedAt  DateTime?
   createdAt   DateTime  @default(now())
 

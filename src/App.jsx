@@ -47,6 +47,23 @@ function Stars({ rating, max = 5 }) {
   )
 }
 
+// Renders a cover image when available, falls back to a solid-color block.
+function CoverBlock({ coverUrl, coverColor, type, className = '', style = {} }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  const showImage = coverUrl && !imgFailed
+  return (
+    <div className={`relative overflow-hidden ${className}`} style={style}>
+      {showImage
+        ? <img src={coverUrl} alt="" onError={() => setImgFailed(true)}
+            className="w-full h-full object-cover" />
+        : <div className="w-full h-full flex items-center justify-center"
+            style={{ background: coverColor || 'var(--surface)' }}>
+            <TypeIcon type={type} size={Math.min(Number(style.width || 24), 24)} />
+          </div>}
+    </div>
+  )
+}
+
 function ProgressRing({ pct, size = 36, stroke = 3, color = 'var(--accent)' }) {
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
@@ -710,9 +727,8 @@ function PastItemsTab({ items }) {
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
       {items.map(item => (
         <div key={item.id} className="rounded-xl overflow-hidden border border-t06">
-          <div className="h-20 flex items-center justify-center" style={{ background: item.coverColor }}>
-            <TypeIcon type={item.type} size={24} />
-          </div>
+          <CoverBlock coverUrl={item.coverUrl} coverColor={item.coverColor} type={item.type}
+            className="h-20" />
           <div className="p-2.5" style={{ background: 'var(--surface)' }}>
             <p className="text-xs font-medium text-t90 truncate">{item.title}</p>
             <p className="text-xs text-t40 truncate">{item.subtitle}</p>
@@ -730,17 +746,33 @@ function PastItemsTab({ items }) {
 }
 
 function AddItemModal({ clubId, clubType, onClose, onAdded }) {
-  const [form, setForm] = useState({ title: '', subtitle: '', description: '', coverColor: 'var(--surface)' })
+  const [form, setForm] = useState({ title: '', subtitle: '', description: '' })
   const [loading, setLoading] = useState(false)
+  const [coverUrl, setCoverUrl] = useState(null)
+  const [coverLoading, setCoverLoading] = useState(false)
+  const coverTimerRef = useRef(null)
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
-  const COLORS = ['#2A1A0E','#0D1528','#0D2020','#1A1028','var(--surface)','#1A2850','#3A2020','#1E2A1A']
+  useEffect(() => {
+    clearTimeout(coverTimerRef.current)
+    if (!form.title || clubType === 'podcast') { setCoverUrl(null); return }
+    setCoverLoading(true)
+    coverTimerRef.current = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ title: form.title, subtitle: form.subtitle, type: clubType })
+        const res = await get(`/cover-art?${params}`)
+        setCoverUrl(res.coverUrl || null)
+      } catch { setCoverUrl(null) }
+      finally { setCoverLoading(false) }
+    }, 600)
+    return () => clearTimeout(coverTimerRef.current)
+  }, [form.title, form.subtitle, clubType])
 
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
     try {
-      const item = await post(`/clubs/${clubId}/items`, { ...form, type: clubType })
+      const item = await post(`/clubs/${clubId}/items`, { ...form, type: clubType, coverUrl })
       onAdded(item)
       onClose()
     } catch (err) { alert(err.message) }
@@ -755,19 +787,20 @@ function AddItemModal({ clubId, clubType, onClose, onAdded }) {
           <button onClick={onClose}><X size={18} className="text-t40" /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input value={form.title} onChange={set('title')} required placeholder="Title" className="input-field" />
-          <input value={form.subtitle} onChange={set('subtitle')} placeholder="Author / Director / Studio" className="input-field" />
-          <textarea value={form.description} onChange={set('description')} rows={2} placeholder="Description (optional)" className="input-field resize-none" />
-          <div>
-            <p className="text-xs text-t50 mb-2">Cover color</p>
-            <div className="flex gap-2 flex-wrap">
-              {COLORS.map(c => (
-                <button key={c} type="button" onClick={() => setForm(f => ({ ...f, coverColor: c }))}
-                  className="w-7 h-7 rounded-lg border-2 transition-all"
-                  style={{ background: c, borderColor: form.coverColor === c ? 'var(--accent)' : 'transparent' }} />
-              ))}
+          <div className="flex gap-3 items-start">
+            <div className="w-14 h-20 rounded-lg overflow-hidden shrink-0 border border-t08 flex items-center justify-center" style={{ background: 'var(--surface2)' }}>
+              {coverLoading
+                ? <Spinner size={16} />
+                : coverUrl
+                  ? <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+                  : <TypeIcon type={clubType} size={20} />}
+            </div>
+            <div className="flex-1 space-y-3">
+              <input value={form.title} onChange={set('title')} required placeholder="Title" className="input-field" />
+              <input value={form.subtitle} onChange={set('subtitle')} placeholder="Author / Director / Studio" className="input-field" />
             </div>
           </div>
+          <textarea value={form.description} onChange={set('description')} rows={2} placeholder="Description (optional)" className="input-field resize-none" />
           <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Setting…' : 'Set as current'}</button>
         </form>
       </div>
@@ -867,9 +900,8 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
         {club?.currentItem ? (
           <div className="rounded-xl p-3 border border-t08" style={{ background: 'rgba(0,0,0,0.2)' }}>
             <div className="flex items-start gap-3">
-              <div className="w-10 h-14 rounded-lg flex items-center justify-center shrink-0" style={{ background: club.currentItem.coverColor }}>
-                <TypeIcon type={club.type} size={16} />
-              </div>
+              <CoverBlock coverUrl={club.currentItem.coverUrl} coverColor={club.currentItem.coverColor}
+                type={club.type} className="w-10 h-14 rounded-lg shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-t40 mb-0.5">Currently reading / watching</p>
                 <p className="font-semibold text-sm leading-snug" style={{ color: 'var(--text)' }}>{club.currentItem.title}</p>

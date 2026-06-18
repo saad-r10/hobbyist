@@ -46,6 +46,7 @@ async function formatClub(club, userId) {
       subtitle: currentItem.subtitle,
       description: currentItem.description,
       coverColor: currentItem.coverColor,
+      coverUrl: currentItem.coverUrl ?? null,
       type: currentItem.type,
       myProgress,
     } : null,
@@ -123,6 +124,7 @@ router.get('/:id', requireAuth, asyncHandler(async (req, res) => {
     title: item.title,
     subtitle: item.subtitle,
     coverColor: item.coverColor,
+    coverUrl: item.coverUrl ?? null,
     type: item.type,
     finishedAt: item.finishedAt,
     avgRating: item.ratings.length
@@ -158,6 +160,7 @@ router.get('/:id', requireAuth, asyncHandler(async (req, res) => {
       subtitle: currentItem.subtitle,
       description: currentItem.description,
       coverColor: currentItem.coverColor,
+      coverUrl: currentItem.coverUrl ?? null,
       type: currentItem.type,
       myProgress,
     } : null,
@@ -248,6 +251,7 @@ router.post('/:id/items', requireAuth, [
   body('description').optional().trim(),
   body('type').isIn(['book', 'film', 'podcast', 'game']),
   body('coverColor').optional(),
+  body('coverUrl').optional().isURL().withMessage('coverUrl must be a valid URL'),
 ], asyncHandler(async (req, res) => {
   const clubId = Number(req.params.id)
   const membership = await prisma.clubMember.findUnique({
@@ -271,6 +275,7 @@ router.post('/:id/items', requireAuth, [
       description: req.body.description || '',
       type: req.body.type,
       coverColor: req.body.coverColor || '#162030',
+      coverUrl: req.body.coverUrl || null,
     }
   })
 
