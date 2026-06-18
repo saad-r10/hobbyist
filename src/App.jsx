@@ -1641,10 +1641,10 @@ function Analytics() {
 // ── Profile ───────────────────────────────────────────────────────────────
 
 const SOURCE_META = {
-  letterboxd: { label: 'Letterboxd', color: '#00AC34' },
-  goodreads:  { label: 'Goodreads',  color: '#553B08' },
-  manual:     { label: 'Manual',     color: 'var(--accent)' },
-  club:       { label: 'Clubs',      color: 'var(--color-film)' },
+  letterboxd: { label: 'Letterboxd', color: '#00AC34',           Icon: Film },
+  goodreads:  { label: 'Goodreads',  color: '#C16B27',           Icon: BookOpen },
+  manual:     { label: 'Manual',     color: 'var(--accent)',      Icon: Upload },
+  club:       { label: 'Clubs',      color: 'var(--color-film)',  Icon: Users },
 }
 
 function Profile({ onLogout }) {
@@ -1681,76 +1681,80 @@ function Profile({ onLogout }) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="rounded-2xl p-5 border border-t06" style={{ background: 'var(--surface)' }}>
-        <div className="flex items-start gap-4 mb-4">
-          <Avatar user={profile} size={56} />
-          <div className="flex-1 min-w-0">
-            <h2 className="font-display text-fs-2xl font-bold truncate" style={{ color: 'var(--text)' }}>{profile?.displayName}</h2>
-            <p className="text-sm text-t40">@{profile?.username}</p>
-            {profile?.bio && <p className="text-sm text-t60 mt-1.5 leading-relaxed">{profile.bio}</p>}
-          </div>
+      {/* Banner + identity card */}
+      <div className="rounded-2xl overflow-hidden border border-t06" style={{ background: 'var(--surface)' }}>
+        {/* Gradient banner */}
+        <div className="relative h-24" style={{ background: 'var(--gradient-warm)' }}>
           <button onClick={() => setEditing(e => !e)}
-            className="rounded-xl p-2 transition-colors"
-            style={{ background: 'var(--border-06)' }}>
-            <Settings size={15} className="text-t50" />
+            className="absolute top-3 right-3 rounded-xl p-2 transition-colors"
+            style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(4px)' }}>
+            <Settings size={14} style={{ color: 'rgba(255,255,255,0.85)' }} />
           </button>
         </div>
 
-        {editing && (
-          <form onSubmit={saveProfile} className="space-y-3 pt-3 border-t border-t08 mt-3">
-            <div>
-              <label className="block text-xs text-t50 mb-1">Display name</label>
-              <input value={form.displayName} onChange={e => setForm(f => ({ ...f, displayName: e.target.value }))} className="input-field text-sm" />
+        {/* Avatar overlapping banner */}
+        <div className="px-5 pb-5">
+          <div className="flex items-end justify-between" style={{ marginTop: '-28px', marginBottom: '12px' }}>
+            <div className="rounded-full p-1" style={{ background: 'var(--surface)', boxShadow: 'var(--elevation-2)' }}>
+              <Avatar user={profile} size={56} />
             </div>
-            <div>
-              <label className="block text-xs text-t50 mb-1">Bio</label>
-              <textarea value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} rows={3} maxLength={300} className="input-field text-sm resize-none" />
+          </div>
+
+          <h2 className="font-display text-fs-2xl font-bold leading-tight" style={{ color: 'var(--text)' }}>{profile?.displayName}</h2>
+          <p className="text-sm text-t40 mb-1">@{profile?.username}</p>
+          {profile?.bio && <p className="text-sm text-t60 leading-relaxed">{profile.bio}</p>}
+
+          {/* Interests inline */}
+          {profile?.interests?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {profile.interests.map(id => {
+                const info = INTEREST_MAP[id] || { label: id }
+                return <span key={id} className="badge badge-accent">{info.label}</span>
+              })}
             </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setEditing(false)} className="btn-ghost flex-1 text-sm py-1.5">Cancel</button>
-              <button type="submit" disabled={saving} className="btn-primary flex-1 text-sm py-1.5">{saving ? 'Saving…' : 'Save'}</button>
-            </div>
-          </form>
-        )}
+          )}
+
+          {editing && (
+            <form onSubmit={saveProfile} className="space-y-3 pt-4 border-t border-t08 mt-4">
+              <div>
+                <label className="block text-xs text-t50 mb-1">Display name</label>
+                <input value={form.displayName} onChange={e => setForm(f => ({ ...f, displayName: e.target.value }))} className="input-field text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs text-t50 mb-1">Bio</label>
+                <textarea value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} rows={3} maxLength={300} className="input-field text-sm resize-none" />
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setEditing(false)} className="btn-ghost flex-1 text-sm py-1.5">Cancel</button>
+                <button type="submit" disabled={saving} className="btn-primary flex-1 text-sm py-1.5">{saving ? 'Saving…' : 'Save'}</button>
+              </div>
+            </form>
+          )}
+        </div>
 
         {/* Stats strip */}
-        <div className="grid grid-cols-3 gap-0 pt-4 border-t border-t08 mt-4">
+        <div className="grid grid-cols-3 border-t border-t08">
           {[
-            { val: analytics?.summary?.finished ?? me?.stats?.finished ?? 0, label: 'Total' },
+            { val: analytics?.summary?.finished ?? me?.stats?.finished ?? 0, label: 'Finished' },
             { val: me?.stats?.clubs ?? 0, label: 'Clubs' },
             { val: analytics?.summary?.avgRating ? `${analytics.summary.avgRating}★` : '—', label: 'Avg rating' },
           ].map((s, i) => (
-            <div key={i} className="text-center">
-              <p className="text-xl font-bold" style={{ color: 'var(--accent)' }}>{s.val}</p>
-              <p className="text-xs text-t40">{s.label}</p>
+            <div key={i} className={`py-4 text-center ${i < 2 ? 'border-r border-t08' : ''}`}>
+              <p className="text-fs-xl font-bold font-display" style={{ color: 'var(--accent)' }}>{s.val}</p>
+              <p className="text-fs-xs text-t40 mt-0.5">{s.label}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Interests */}
-      {profile?.interests?.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {profile.interests.map(id => {
-            const info = INTEREST_MAP[id] || { label: id }
-            return (
-              <span key={id} className="badge badge-accent">
-                {info.label}
-              </span>
-            )
-          })}
-        </div>
-      )}
-
       {/* Import history */}
-      <div className="rounded-2xl p-4 border border-t06" style={{ background: 'var(--surface)' }}>
-        <div className="flex items-center justify-between mb-3">
+      <div className="rounded-2xl border border-t06 overflow-hidden" style={{ background: 'var(--surface)' }}>
+        <div className="flex items-center justify-between px-4 pt-4 pb-3">
           <div>
-            <h3 className="text-sm font-semibold text-t80">Import history</h3>
+            <h3 className="text-fs-sm font-semibold text-t80">Import history</h3>
             {analytics?.summary?.imported > 0 && (
-              <p className="text-xs text-t40 mt-0.5">
-                {analytics.summary.imported} items imported from external platforms
+              <p className="text-fs-xs text-t40 mt-0.5">
+                {analytics.summary.imported} items from external platforms
               </p>
             )}
           </div>
@@ -1762,22 +1766,28 @@ function Profile({ onLogout }) {
         </div>
 
         {Object.keys(importSources).length > 0 ? (
-          <div className="space-y-2">
+          <div className="divide-y divide-t06">
             {Object.entries(importSources).map(([source, count]) => {
-              const meta = SOURCE_META[source] || { label: source, color: 'var(--accent)' }
+              const meta = SOURCE_META[source] || { label: source, color: 'var(--accent)', Icon: Upload }
+              const SrcIcon = meta.Icon
               return (
-                <div key={source} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ background: meta.color }} />
-                    <span className="text-sm text-t70">{meta.label}</span>
+                <div key={source} className="flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg p-1.5" style={{ background: meta.color + '20' }}>
+                      <SrcIcon size={13} style={{ color: meta.color }} />
+                    </div>
+                    <span className="text-fs-sm font-medium text-t80">{meta.label}</span>
                   </div>
-                  <span className="text-sm font-medium text-t60">{count} items</span>
+                  <span className="text-fs-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: meta.color + '18', color: meta.color }}>
+                    {count} items
+                  </span>
                 </div>
               )
             })}
           </div>
         ) : (
-          <p className="text-sm text-t30 text-center py-2">
+          <p className="text-fs-sm text-t30 text-center px-4 py-5">
             No imports yet. Bring in your Letterboxd or Goodreads history.
           </p>
         )}
