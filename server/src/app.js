@@ -23,6 +23,9 @@ import { errorHandler } from './middleware/errorHandler.js'
 const app = express()
 const isDev = process.env.NODE_ENV !== 'production'
 
+// Trust Railway's reverse proxy so express-rate-limit can read the real client IP
+app.set('trust proxy', 1)
+
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: isDev ? false : undefined,
