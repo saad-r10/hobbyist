@@ -1313,6 +1313,10 @@ function Leaderboard() {
   const top3 = entries.slice(0, 3)
   const rest = entries.slice(3)
   const PERIODS = ['week', 'month', 'all']
+  const maxScore = entries[0]?.score || 1
+
+  // silver → bronze → gold so gold "crowns" last
+  const podiumDelays = [0, 300, 150]
 
   return (
     <div>
@@ -1330,16 +1334,24 @@ function Leaderboard() {
       {top3.length >= 3 && (
         <div className="flex items-end justify-center gap-3 mb-6">
           {[top3[1], top3[0], top3[2]].map((entry, i) => {
-            const heights = [80, 100, 68]
+            const heights = [80, 104, 64]
             const medals = ['🥈', '🥇', '🥉']
+            const isGold = i === 1
             return (
-              <div key={entry.id} className="flex flex-col items-center gap-2">
-                <Avatar user={entry} size={44} />
-                <p className="text-xs font-medium text-center" style={{ color: 'var(--text)' }}>{entry.displayName.split(' ')[0]}</p>
-                <div className="w-20 rounded-t-xl flex items-center justify-center relative transition-all duration-500"
-                  style={{ height: heights[i], background: `rgba(232,160,32,${i === 1 ? 0.2 : 0.08})`, border: `1px solid rgba(232,160,32,${i === 1 ? 0.3 : 0.12})` }}>
-                  <span className="text-2xl absolute -top-4">{medals[i]}</span>
-                  <span className="text-xs text-t60 mt-4">{entry.score}pts</span>
+              <div key={entry.id} className="flex flex-col items-center gap-2"
+                style={{ animation: `podiumRise 0.55s var(--ease-spring) ${podiumDelays[i]}ms both` }}>
+                <Avatar user={entry} size={isGold ? 52 : 42} />
+                <p className="text-xs font-semibold text-center text-t90 truncate max-w-[72px]">{entry.displayName.split(' ')[0]}</p>
+                <div className="w-20 rounded-t-xl flex flex-col items-center justify-center relative"
+                  style={{
+                    height: heights[i],
+                    background: isGold ? 'var(--accent-15)' : 'var(--surface-06)',
+                    border: `1px solid ${isGold ? 'var(--accent-25)' : 'var(--border-08)'}`,
+                    boxShadow: isGold ? '0 0 24px var(--accent-12)' : 'none',
+                  }}>
+                  <span className="text-xl absolute -top-3.5">{medals[i]}</span>
+                  <span className="text-sm font-bold mt-4" style={{ color: isGold ? 'var(--accent)' : 'var(--text-70)' }}>{entry.score}</span>
+                  <span className="text-[10px] text-t30">pts</span>
                 </div>
               </div>
             )
@@ -1347,24 +1359,42 @@ function Leaderboard() {
         </div>
       )}
 
-      {/* Rest of table */}
+      {/* Ranked table */}
       <div className="space-y-2">
-        {rest.map(entry => (
-          <div key={entry.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 border border-t06" style={{ background: 'var(--surface)' }}>
-            <span className="text-sm font-semibold w-6 text-center text-t40">#{entry.rank}</span>
-            <Avatar user={entry} size={32} />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-t90 truncate">{entry.displayName}</p>
-              <p className="text-xs text-t40">{entry.finished} items</p>
-            </div>
-            {entry.streak > 0 && (
-              <div className="flex items-center gap-1 text-xs text-[#E87070]">
-                <Flame size={12} fill="#E87070" /> {entry.streak}
+        {rest.map((entry, idx) => {
+          const pct = Math.max(4, Math.round((entry.score / maxScore) * 100))
+          return (
+            <div key={entry.id} className="relative overflow-hidden rounded-xl border border-t06"
+              style={{ background: 'var(--surface)', animation: `fadeUp var(--duration-base) var(--ease-out) ${idx * 35}ms both` }}>
+              <div className="flex items-center gap-3 px-3 py-2.5">
+                <span className="text-sm font-semibold w-6 text-center text-t40">#{entry.rank}</span>
+                <Avatar user={entry} size={32} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-t90 truncate">{entry.displayName}</p>
+                  <p className="text-xs text-t40">{entry.finished} items</p>
+                </div>
+                {entry.streak > 0 && (
+                  <div className="flex items-center gap-1 text-xs text-[#E87070]"
+                    style={{ animation: 'flameFlicker 1.2s ease-in-out infinite' }}>
+                    <Flame size={12} fill="#E87070" /> {entry.streak}
+                  </div>
+                )}
+                <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>{entry.score}</span>
               </div>
-            )}
-            <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>{entry.score}</span>
-          </div>
-        ))}
+              {/* Score bar */}
+              <div className="h-[3px]" style={{ background: 'var(--border-06)' }}>
+                <div className="h-full rounded-full"
+                  style={{
+                    width: `${pct}%`,
+                    background: 'var(--accent)',
+                    opacity: 0.45,
+                    transformOrigin: 'left',
+                    animation: `scoreBarFill 0.55s var(--ease-out) ${idx * 35 + 180}ms both`,
+                  }} />
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {myRank > 10 && (
