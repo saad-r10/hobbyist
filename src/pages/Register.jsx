@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BookOpen, Eye, EyeOff, AlertCircle, Check } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle, Check, ArrowRight } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import AuthLayout from '../components/AuthLayout.jsx'
 
 export default function Register() {
   const { register } = useAuth()
@@ -62,103 +63,102 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12" style={{ background: 'var(--bg)' }}>
-      <div className="w-full max-w-sm">
-        <div className="flex items-center gap-2 mb-8 justify-center">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#E8A020' }}>
-            <BookOpen size={16} style={{ color: 'var(--bg)' }} />
-          </div>
-          <span className="font-display text-xl font-semibold" style={{ color: 'var(--text)' }}>Hobbyist</span>
-        </div>
-
-        <div className="rounded-2xl p-6 border border-t08" style={{ background: 'var(--surface)', color: 'var(--text)' }}>
-          <h2 className="font-display text-2xl font-semibold mb-1">Create your account</h2>
-          <p className="text-t50 text-sm mb-6">Join clubs, track your reads and watches.</p>
-
-          {serverError && (
-            <div className="flex items-start gap-2 rounded-xl border border-danger-40 bg-danger-10 p-3 text-sm text-danger mb-4">
-              <AlertCircle size={16} className="mt-0.5 shrink-0" />
-              {serverError}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Field label="Display name" error={errors.displayName}>
-              <input type="text" value={form.displayName} onChange={set('displayName')}
-                placeholder="Alex Chen" autoComplete="name"
-                className={`input-field ${errors.displayName ? 'border-[#E87070]/60' : ''}`} />
-            </Field>
-
-            <Field label="Username" error={errors.username}>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-t30 text-sm">@</span>
-                <input type="text" value={form.username} onChange={set('username')}
-                  placeholder="alexchen" autoComplete="username"
-                  className={`input-field pl-7 ${errors.username ? 'border-[#E87070]/60' : ''}`} />
-              </div>
-            </Field>
-
-            <Field label="Email address" error={errors.email}>
-              <input type="email" value={form.email} onChange={set('email')}
-                placeholder="you@example.com" autoComplete="email"
-                className={`input-field ${errors.email ? 'border-[#E87070]/60' : ''}`} />
-            </Field>
-
-            <Field label="Password" error={errors.password}>
-              <div className="relative">
-                <input type={showPw ? 'text' : 'password'} value={form.password} onChange={set('password')}
-                  placeholder="At least 8 characters" autoComplete="new-password"
-                  className={`input-field pr-10 ${errors.password ? 'border-[#E87070]/60' : ''}`} />
-                <button type="button" onClick={() => setShowPw(s => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-t40 hover:text-t70 transition-colors">
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              {form.password && (
-                <div className="mt-1.5 flex items-center gap-2">
-                  <div className="flex gap-0.5 flex-1">
-                    {[1,2,3,4].map(i => (
-                      <div key={i} className="h-1 flex-1 rounded-full transition-all duration-300"
-                        style={{ background: i <= strength ? strengthColor : 'rgba(245,240,232,0.1)' }} />
-                    ))}
-                  </div>
-                  <span className="text-xs" style={{ color: strengthColor }}>{strengthLabel}</span>
-                </div>
-              )}
-            </Field>
-
-            <Field label="Confirm password" error={errors.confirmPassword}>
-              <div className="relative">
-                <input type={showPw ? 'text' : 'password'} value={form.confirmPassword} onChange={set('confirmPassword')}
-                  placeholder="Repeat your password" autoComplete="new-password"
-                  className={`input-field pr-10 ${errors.confirmPassword ? 'border-[#E87070]/60' : ''}`} />
-                {form.confirmPassword && form.password === form.confirmPassword && (
-                  <Check size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-success" />
-                )}
-              </div>
-            </Field>
-
-            <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
-              {loading ? 'Creating account…' : 'Create account'}
-            </button>
-          </form>
-
-          <p className="mt-5 text-center text-sm text-t40">
-            Already have an account?{' '}
-            <Link to="/login" className="text-[#E8A020] hover:text-accent transition-colors font-medium">
-              Sign in
-            </Link>
+    <AuthLayout>
+      <div className="fade-up">
+        <div className="mb-7">
+          <h2 className="font-display text-fs-2xl font-semibold mb-1.5" style={{ color: 'var(--text)' }}>
+            Create your account
+          </h2>
+          <p className="text-sm" style={{ color: 'var(--text-50)' }}>
+            Join clubs, track your reads and watches.
           </p>
         </div>
+
+        {serverError && (
+          <div className="flex items-start gap-2 rounded-xl border border-danger-40 bg-danger-10 p-3 text-sm text-danger mb-5">
+            <AlertCircle size={15} className="mt-0.5 shrink-0" />
+            {serverError}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Field label="Display name" error={errors.displayName}>
+            <input type="text" value={form.displayName} onChange={set('displayName')}
+              placeholder="Alex Chen" autoComplete="name"
+              className={`input-field ${errors.displayName ? 'border-[#E87070]/60' : ''}`} />
+          </Field>
+
+          <Field label="Username" error={errors.username}>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-t30">@</span>
+              <input type="text" value={form.username} onChange={set('username')}
+                placeholder="alexchen" autoComplete="username"
+                className={`input-field pl-7 ${errors.username ? 'border-[#E87070]/60' : ''}`} />
+            </div>
+          </Field>
+
+          <Field label="Email address" error={errors.email}>
+            <input type="email" value={form.email} onChange={set('email')}
+              placeholder="you@example.com" autoComplete="email"
+              className={`input-field ${errors.email ? 'border-[#E87070]/60' : ''}`} />
+          </Field>
+
+          <Field label="Password" error={errors.password}>
+            <div className="relative">
+              <input type={showPw ? 'text' : 'password'} value={form.password} onChange={set('password')}
+                placeholder="At least 8 characters" autoComplete="new-password"
+                className={`input-field pr-10 ${errors.password ? 'border-[#E87070]/60' : ''}`} />
+              <button type="button" onClick={() => setShowPw(s => !s)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors text-t40 hover:text-t70">
+                {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+            {form.password && (
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex gap-1 flex-1">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="h-1 flex-1 rounded-full transition-all duration-300"
+                      style={{ background: i <= strength ? strengthColor : 'var(--border-08)' }} />
+                  ))}
+                </div>
+                <span className="text-xs font-medium" style={{ color: strengthColor }}>{strengthLabel}</span>
+              </div>
+            )}
+          </Field>
+
+          <Field label="Confirm password" error={errors.confirmPassword}>
+            <div className="relative">
+              <input type={showPw ? 'text' : 'password'} value={form.confirmPassword} onChange={set('confirmPassword')}
+                placeholder="Repeat your password" autoComplete="new-password"
+                className={`input-field pr-10 ${errors.confirmPassword ? 'border-[#E87070]/60' : ''}`} />
+              {form.confirmPassword && form.password === form.confirmPassword && (
+                <Check size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-success" />
+              )}
+            </div>
+          </Field>
+
+          <button type="submit" disabled={loading}
+            className="btn-primary w-full flex items-center justify-center gap-2 !py-3 !text-sm mt-2">
+            {loading ? 'Creating account…' : 'Create account'}
+            {!loading && <ArrowRight size={15} />}
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-sm" style={{ color: 'var(--text-40)' }}>
+          Already have an account?{' '}
+          <Link to="/login" className="font-medium transition-colors" style={{ color: 'var(--accent)' }}>
+            Sign in
+          </Link>
+        </p>
       </div>
-    </div>
+    </AuthLayout>
   )
 }
 
 function Field({ label, error, children }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-t60 mb-1.5">{label}</label>
+      <label className="block text-xs font-medium mb-1.5 text-t60">{label}</label>
       {children}
       {error && <p className="mt-1 text-xs text-danger">{error}</p>}
     </div>

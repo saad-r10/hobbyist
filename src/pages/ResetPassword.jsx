@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { BookOpen, Eye, EyeOff, AlertCircle, Check } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle, Check, ArrowRight, ShieldCheck } from 'lucide-react'
 import { api } from '../api/client.js'
+import AuthLayout from '../components/AuthLayout.jsx'
 
 export default function ResetPassword() {
   const [params] = useSearchParams()
@@ -17,12 +18,23 @@ export default function ResetPassword() {
 
   if (!token) {
     return (
-      <Shell>
-        <div className="text-center">
-          <p className="text-danger mb-4">Invalid or missing reset token.</p>
-          <Link to="/login" className="btn-primary">Back to sign in</Link>
+      <AuthLayout>
+        <div className="text-center fade-up">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center mx-auto mb-5"
+               style={{ background: 'var(--danger-10)', border: '1px solid var(--danger-40)' }}>
+            <AlertCircle size={20} style={{ color: 'var(--danger)' }} />
+          </div>
+          <h2 className="font-display text-fs-xl font-semibold mb-2" style={{ color: 'var(--text)' }}>
+            Invalid link
+          </h2>
+          <p className="text-sm mb-6" style={{ color: 'var(--text-50)' }}>
+            This reset link is missing or invalid. Please request a new one.
+          </p>
+          <Link to="/login" className="btn-primary inline-flex items-center gap-2">
+            Back to sign in <ArrowRight size={15} />
+          </Link>
         </div>
-      </Shell>
+      </AuthLayout>
     )
   }
 
@@ -44,69 +56,82 @@ export default function ResetPassword() {
 
   if (done) {
     return (
-      <Shell>
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(122,158,126,0.2)' }}>
-            <Check size={24} style={{ color: '#7A9E7E' }} />
+      <AuthLayout>
+        <div className="text-center fade-up">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6"
+               style={{ background: 'var(--success-10)', border: '1px solid var(--success-40)' }}>
+            <Check size={26} style={{ color: 'var(--success)' }} />
           </div>
-          <h2 className="font-display text-xl font-semibold mb-2">Password updated!</h2>
-          <p className="text-t50 text-sm mb-6">You can now sign in with your new password.</p>
-          <button onClick={() => navigate('/login', { replace: true })} className="btn-primary w-full">Sign in</button>
+          <h2 className="font-display text-fs-2xl font-semibold mb-2" style={{ color: 'var(--text)' }}>
+            Password updated!
+          </h2>
+          <p className="text-sm mb-8" style={{ color: 'var(--text-50)' }}>
+            You can now sign in with your new password.
+          </p>
+          <button onClick={() => navigate('/login', { replace: true })}
+            className="btn-primary w-full flex items-center justify-center gap-2 !py-3">
+            Sign in <ArrowRight size={15} />
+          </button>
         </div>
-      </Shell>
+      </AuthLayout>
     )
   }
 
   return (
-    <Shell>
-      <h2 className="font-display text-2xl font-semibold mb-1">Set new password</h2>
-      <p className="text-t50 text-sm mb-6">Choose a strong password for your account.</p>
-
-      {error && (
-        <div className="flex items-start gap-2 rounded-xl border border-danger-40 bg-danger-10 p-3 text-sm text-danger mb-4">
-          <AlertCircle size={16} className="mt-0.5 shrink-0" /> {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-xs font-medium text-t60 mb-1.5">New password</label>
-          <div className="relative">
-            <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
-              required minLength={8} placeholder="At least 8 characters" className="input-field pr-10" />
-            <button type="button" onClick={() => setShowPw(s => !s)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-t40 hover:text-t70 transition-colors">
-              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+    <AuthLayout>
+      <div className="fade-up">
+        <div className="mb-7">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5"
+               style={{ background: 'var(--accent-12)', border: '1px solid var(--accent-25)' }}>
+            <ShieldCheck size={20} style={{ color: 'var(--accent)' }} />
           </div>
+          <h2 className="font-display text-fs-2xl font-semibold mb-1.5" style={{ color: 'var(--text)' }}>
+            Set new password
+          </h2>
+          <p className="text-sm" style={{ color: 'var(--text-50)' }}>
+            Choose a strong password for your account.
+          </p>
         </div>
-        <div>
-          <label className="block text-xs font-medium text-t60 mb-1.5">Confirm password</label>
-          <input type={showPw ? 'text' : 'password'} value={confirm} onChange={e => setConfirm(e.target.value)}
-            required placeholder="Repeat your password" className="input-field" />
-        </div>
-        <button type="submit" disabled={loading} className="btn-primary w-full">
-          {loading ? 'Updating…' : 'Update password'}
-        </button>
-      </form>
-    </Shell>
-  )
-}
 
-function Shell({ children }) {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: 'var(--bg)' }}>
-      <div className="w-full max-w-sm">
-        <div className="flex items-center gap-2 mb-8 justify-center">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#E8A020' }}>
-            <BookOpen size={16} style={{ color: 'var(--bg)' }} />
+        {error && (
+          <div className="flex items-start gap-2 rounded-xl border border-danger-40 bg-danger-10 p-3 text-sm text-danger mb-5">
+            <AlertCircle size={15} className="mt-0.5 shrink-0" /> {error}
           </div>
-          <span className="font-display text-xl font-semibold" style={{ color: 'var(--text)' }}>Hobbyist</span>
-        </div>
-        <div className="rounded-2xl p-6 border border-t08" style={{ background: 'var(--surface)', color: 'var(--text)' }}>
-          {children}
-        </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium mb-1.5 text-t60">New password</label>
+            <div className="relative">
+              <input type={showPw ? 'text' : 'password'} value={password}
+                onChange={e => setPassword(e.target.value)}
+                required minLength={8} placeholder="At least 8 characters" className="input-field pr-10" />
+              <button type="button" onClick={() => setShowPw(s => !s)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors text-t40 hover:text-t70">
+                {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1.5 text-t60">Confirm password</label>
+            <div className="relative">
+              <input type={showPw ? 'text' : 'password'} value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                required placeholder="Repeat your password" className="input-field pr-8" />
+              {confirm && password === confirm && (
+                <Check size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-success" />
+              )}
+            </div>
+          </div>
+
+          <button type="submit" disabled={loading}
+            className="btn-primary w-full flex items-center justify-center gap-2 !py-3 !text-sm">
+            {loading ? 'Updating…' : 'Update password'}
+            {!loading && <ArrowRight size={15} />}
+          </button>
+        </form>
       </div>
-    </div>
+    </AuthLayout>
   )
 }
