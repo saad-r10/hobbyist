@@ -5,7 +5,7 @@ import {
   ArrowLeft, Flame, Plus, Check, Clock, Send, LogOut,
   Users, AlertCircle, Loader2, X, Settings, Search, TrendingUp,
   PlayCircle, CheckCircle2, Sparkles, MessageSquare, Upload,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Download,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext.jsx'
@@ -1477,7 +1477,6 @@ function Leaderboard() {
             </div>
           )
         })}
-
       </div>
 
       {myRank > 10 && (
@@ -1492,7 +1491,80 @@ function Leaderboard() {
 
 // ── Analytics ─────────────────────────────────────────────────────────────
 
-const LEVEL_COLORS = ['var(--border-06)', 'rgba(122,158,126,0.3)', 'rgba(122,158,126,0.55)', 'rgba(122,158,126,0.8)', '#7A9E7E']
+const LEVEL_COLORS = ['var(--border-06)', 'var(--accent2-12)', 'rgba(61,191,189,0.35)', 'rgba(61,191,189,0.65)', 'var(--accent2)']
+
+const TYPE_RAW_COLORS = { book: '#C47D5A', film: '#6B8DD6', podcast: '#3DBFBD', game: '#9B6DB5' }
+
+function downloadWrapUp(wrapup) {
+  const W = 600, H = 380
+  const canvas = document.createElement('canvas')
+  canvas.width = W * 2
+  canvas.height = H * 2
+  const ctx = canvas.getContext('2d')
+  ctx.scale(2, 2)
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, W, H)
+  bg.addColorStop(0, '#0F1923')
+  bg.addColorStop(1, '#162030')
+  ctx.fillStyle = bg
+  ctx.fillRect(0, 0, W, H)
+
+  // Top accent bar
+  const strip = ctx.createLinearGradient(0, 0, W, 0)
+  strip.addColorStop(0, '#E8A020')
+  strip.addColorStop(1, '#D4651A')
+  ctx.fillStyle = strip
+  ctx.fillRect(0, 0, W, 5)
+
+  // Title
+  ctx.fillStyle = '#F5F0E8'
+  ctx.font = 'bold 26px Georgia, serif'
+  ctx.fillText(`Your ${wrapup.year} in Review`, 40, 54)
+  ctx.fillStyle = 'rgba(245,240,232,0.45)'
+  ctx.font = '13px sans-serif'
+  ctx.fillText('Hobbyist · Year Wrap-Up', 40, 74)
+
+  // Stat cards
+  const stats = [
+    { val: String(wrapup.thisYear), label: 'Finished this year', color: '#E8A020' },
+    { val: String(wrapup.longestStreak), label: 'Day streak', color: '#3DBFBD' },
+    { val: wrapup.topRated ? wrapup.topRated.title.slice(0, 18) : '—', label: 'Top rated', color: TYPE_RAW_COLORS[wrapup.topRated?.type] || '#C47D5A' },
+    { val: wrapup.topTypeThisYear ? wrapup.topTypeThisYear.charAt(0).toUpperCase() + wrapup.topTypeThisYear.slice(1) + 's' : '—', label: 'Favourite type', color: TYPE_RAW_COLORS[wrapup.topTypeThisYear] || '#6B8DD6' },
+  ]
+
+  stats.forEach((s, i) => {
+    const col = i % 2, row = Math.floor(i / 2)
+    const x = 40 + col * 280, y = 102 + row * 120
+
+    ctx.fillStyle = 'rgba(245,240,232,0.05)'
+    ctx.beginPath()
+    ctx.roundRect(x, y, 255, 100, 10)
+    ctx.fill()
+
+    ctx.fillStyle = s.color
+    const fontSize = s.val.length > 10 ? 18 : 28
+    ctx.font = `bold ${fontSize}px sans-serif`
+    ctx.fillText(s.val, x + 16, y + 44)
+
+    ctx.fillStyle = 'rgba(245,240,232,0.45)'
+    ctx.font = '12px sans-serif'
+    ctx.fillText(s.label, x + 16, y + 66)
+  })
+
+  // Footer
+  ctx.fillStyle = 'rgba(245,240,232,0.2)'
+  ctx.font = '11px sans-serif'
+  ctx.fillText('hobbyist.app', W - 100, H - 18)
+
+  const a = document.createElement('a')
+  a.download = `hobbyist-${wrapup.year}-wrap.png`
+  canvas.toBlob(blob => {
+    a.href = URL.createObjectURL(blob)
+    a.click()
+    URL.revokeObjectURL(a.href)
+  })
+}
 
 function Analytics() {
   const { data, loading, error, refetch } = useApi(() => get('/analytics'))
@@ -1500,7 +1572,7 @@ function Analytics() {
   if (loading) return <div className="space-y-4">{[...Array(4)].map((_, i) => <div key={i} className="h-24 skeleton-block" />)}</div>
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
-  const { summary, monthly, types, heatmap, recentRatings } = data || {}
+  const { summary, monthly, types, heatmap, recentRatings, yearlyWrapup } = data || {}
 
   const maxMonthly = Math.max(...(monthly || []).map(m => m.total), 1)
   const TYPE_COLORS = { book: 'var(--color-book)', film: 'var(--color-film)', podcast: 'var(--color-podcast)', game: 'var(--color-game)' }
@@ -1511,7 +1583,7 @@ function Analytics() {
       <div className="grid grid-cols-2 gap-3">
         {[
           { label: 'Finished', val: summary?.finished ?? 0, color: 'var(--accent)' },
-          { label: 'Avg rating', val: summary?.avgRating ? `${summary.avgRating}★` : '—', color: 'var(--success)' },
+          { label: 'Avg rating', val: summary?.avgRating ? `${summary.avgRating}★` : '—', color: 'var(--accent2)' },
           { label: 'Clubs', val: summary?.clubs ?? 0, color: 'var(--color-film)' },
           { label: 'This year', val: summary?.thisYear ?? 0, color: 'var(--color-book)' },
         ].map(s => (
@@ -1522,15 +1594,29 @@ function Analytics() {
         ))}
       </div>
 
-      {/* Monthly bar chart */}
+      {/* Monthly stacked bar chart */}
       {monthly?.length > 0 && (
         <div className="rounded-2xl p-4 border border-t06" style={{ background: 'var(--surface)' }}>
-          <h3 className="text-sm font-semibold text-t80 mb-4">Activity (last 6 months)</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-t80">Activity (last 6 months)</h3>
+            <div className="flex items-center gap-3">
+              {Object.entries(TYPE_COLORS).map(([type, color]) => (
+                <div key={type} className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+                  <span className="text-xs text-t35 capitalize">{type}</span>
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="flex items-end gap-2 h-28">
             {monthly.map((m, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                <div className="w-full rounded-t-lg transition-all duration-500"
-                  style={{ height: `${(m.total / maxMonthly) * 100}%`, background: 'var(--accent)', minHeight: m.total > 0 ? 4 : 0, opacity: 0.8 }} />
+                <div className="w-full flex flex-col-reverse overflow-hidden rounded-t-sm"
+                  style={{ height: `${(m.total / maxMonthly) * 100}%`, minHeight: m.total > 0 ? 4 : 0 }}>
+                  {['game', 'podcast', 'film', 'book'].map(type => (
+                    m[type] > 0 ? <div key={type} style={{ flex: m[type], background: TYPE_COLORS[type] }} /> : null
+                  ))}
+                </div>
                 <span className="text-xs text-t30">{m.month}</span>
               </div>
             ))}
@@ -1567,7 +1653,14 @@ function Analytics() {
       {/* Heatmap */}
       {heatmap?.length > 0 && (
         <div className="rounded-2xl p-4 border border-t06 overflow-x-auto" style={{ background: 'var(--surface)' }}>
-          <h3 className="text-sm font-semibold text-t80 mb-3">Activity heatmap</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-t80">Activity heatmap</h3>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-t30 mr-1">Less</span>
+              {LEVEL_COLORS.map((c, i) => <div key={i} className="w-2.5 h-2.5 rounded-sm" style={{ background: c }} />)}
+              <span className="text-xs text-t30 ml-1">More</span>
+            </div>
+          </div>
           <div className="flex gap-1 no-scrollbar">
             {heatmap.map((week, wi) => (
               <div key={wi} className="flex flex-col gap-1">
@@ -1582,6 +1675,53 @@ function Analytics() {
         </div>
       )}
 
+      {/* Year in Review */}
+      {yearlyWrapup && (
+        <div className="rounded-2xl overflow-hidden border border-t06">
+          <div className="px-4 pt-4 pb-3" style={{ background: 'var(--gradient-warm)' }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider opacity-70" style={{ color: 'var(--accent-text)' }}>{yearlyWrapup.year} · Year in Review</p>
+                <h3 className="font-display text-lg font-bold mt-0.5" style={{ color: 'var(--accent-text)' }}>Your Reading Year</h3>
+              </div>
+              <button
+                onClick={() => downloadWrapUp(yearlyWrapup)}
+                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-80"
+                style={{ background: 'rgba(15,25,35,0.25)', color: 'var(--accent-text)' }}>
+                <Download size={12} />
+                Save
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 divide-x divide-y" style={{ background: 'var(--surface)', borderColor: 'var(--border-08)' }}>
+            {[
+              { val: yearlyWrapup.thisYear, label: 'Finished', color: 'var(--accent)' },
+              { val: yearlyWrapup.longestStreak, label: 'Day streak', color: 'var(--accent2)' },
+              { val: yearlyWrapup.topTypeThisYear ? yearlyWrapup.topTypeThisYear.charAt(0).toUpperCase() + yearlyWrapup.topTypeThisYear.slice(1) + 's' : '—', label: 'Fave type', color: TYPE_COLORS[yearlyWrapup.topTypeThisYear] || 'var(--accent)' },
+              { val: yearlyWrapup.topRated?.title || '—', label: 'Top rated', color: TYPE_COLORS[yearlyWrapup.topRated?.type] || 'var(--color-book)', truncate: true },
+            ].map(s => (
+              <div key={s.label} className="p-4" style={{ borderColor: 'var(--border-08)' }}>
+                <p className={`text-xl font-bold ${s.truncate ? 'truncate' : ''}`} style={{ color: s.color }}>{s.val}</p>
+                <p className="text-xs text-t40 mt-0.5">{s.label}</p>
+              </div>
+            ))}
+          </div>
+          {yearlyWrapup.topRated && (
+            <div className="px-4 py-3 flex items-center gap-3 border-t border-t08" style={{ background: 'var(--surface)' }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: withAlpha(TYPE_RAW_COLORS[yearlyWrapup.topRated.type] || '#E8A020', 25) }}>
+                <TypeIcon type={yearlyWrapup.topRated.type} size={13} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-t50">Your top rated of {yearlyWrapup.year}</p>
+                <p className="text-sm font-semibold text-t90 truncate">{yearlyWrapup.topRated.title}</p>
+              </div>
+              <Stars rating={yearlyWrapup.topRated.rating} />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Recent ratings */}
       {recentRatings?.length > 0 && (
         <div className="rounded-2xl p-4 border border-t06" style={{ background: 'var(--surface)' }}>
@@ -1589,7 +1729,7 @@ function Analytics() {
           <div className="space-y-3">
             {recentRatings.map(r => (
               <div key={r.id} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: withAlpha(TYPE_COLORS[r.type] || 'var(--accent)', 19) }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: withAlpha(TYPE_RAW_COLORS[r.type] || '#E8A020', 19) }}>
                   <TypeIcon type={r.type} size={14} />
                 </div>
                 <div className="flex-1 min-w-0">
