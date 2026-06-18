@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { BookOpen, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle, ArrowRight, Mail } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { api } from '../api/client.js'
+import AuthLayout from '../components/AuthLayout.jsx'
 
 export default function Login() {
   const { login } = useAuth()
@@ -41,112 +42,137 @@ export default function Login() {
     try {
       await api('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email: forgotEmail }) })
       setForgotSent(true)
-    } catch { setForgotSent(true) } // Always show success to prevent enumeration
+    } catch { setForgotSent(true) }
     finally { setForgotLoading(false) }
   }
 
   if (forgotMode) {
     return (
-      <AuthShell>
-        <h2 className="font-display text-2xl font-semibold mb-1">Reset your password</h2>
-        <p className="text-t50 text-sm mb-6">We'll send a reset link to your inbox.</p>
-        {forgotSent ? (
-          <div className="rounded-xl border border-success bg-success-10 p-4 text-sm text-success">
-            If that email is registered, a reset link is on its way. Check your inbox (and spam folder).
+      <AuthLayout>
+        <div className="fade-up">
+          <div className="mb-7">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5"
+                 style={{ background: 'var(--accent-12)', border: '1px solid var(--accent-25)' }}>
+              <Mail size={20} style={{ color: 'var(--accent)' }} />
+            </div>
+            <h2 className="font-display text-fs-2xl font-semibold mb-1.5" style={{ color: 'var(--text)' }}>
+              Reset password
+            </h2>
+            <p className="text-sm" style={{ color: 'var(--text-50)' }}>
+              We'll send a reset link to your inbox.
+            </p>
           </div>
-        ) : (
-          <form onSubmit={handleForgot} className="space-y-4">
-            <Field label="Email address">
-              <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
-                required placeholder="you@example.com" className="input-field" />
-            </Field>
-            <button type="submit" disabled={forgotLoading} className="btn-primary w-full">
-              {forgotLoading ? 'Sending…' : 'Send reset link'}
-            </button>
-          </form>
-        )}
-        <button onClick={() => { setForgotMode(false); setForgotSent(false) }} className="mt-4 text-sm text-t40 hover:text-t70 transition-colors">
-          ← Back to sign in
-        </button>
-      </AuthShell>
+
+          {forgotSent ? (
+            <div className="rounded-xl p-4 text-sm bg-success-10 border border-success" style={{ color: 'var(--success)' }}>
+              If that email is registered, a reset link is on its way. Check your inbox (and spam folder).
+            </div>
+          ) : (
+            <form onSubmit={handleForgot} className="space-y-4">
+              <Field label="Email address">
+                <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+                  required placeholder="you@example.com" className="input-field" />
+              </Field>
+              <button type="submit" disabled={forgotLoading} className="btn-primary w-full flex items-center justify-center gap-2">
+                {forgotLoading ? 'Sending…' : 'Send reset link'}
+                {!forgotLoading && <ArrowRight size={15} />}
+              </button>
+            </form>
+          )}
+
+          <button
+            onClick={() => { setForgotMode(false); setForgotSent(false) }}
+            className="mt-5 text-sm transition-colors"
+            style={{ color: 'var(--text-40)' }}
+            onMouseEnter={e => e.target.style.color = 'var(--text-70)'}
+            onMouseLeave={e => e.target.style.color = 'var(--text-40)'}
+          >
+            ← Back to sign in
+          </button>
+        </div>
+      </AuthLayout>
     )
   }
 
   return (
-    <AuthShell>
-      <h2 className="font-display text-2xl font-semibold mb-1">Welcome back</h2>
-      <p className="text-t50 text-sm mb-6">Sign in to your Hobbyist account.</p>
-
-      {error && (
-        <div className="flex items-start gap-2 rounded-xl border border-danger-40 bg-danger-10 p-3 text-sm text-danger mb-4">
-          <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          {error}
+    <AuthLayout>
+      <div className="fade-up">
+        <div className="mb-7">
+          <h2 className="font-display text-fs-2xl font-semibold mb-1.5" style={{ color: 'var(--text)' }}>
+            Welcome back
+          </h2>
+          <p className="text-sm" style={{ color: 'var(--text-50)' }}>
+            Sign in to your Hobbyist account.
+          </p>
         </div>
-      )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Email address">
-          <input type="email" value={form.email} onChange={set('email')} required
-            placeholder="you@example.com" autoComplete="email" className="input-field" />
-        </Field>
-        <Field label="Password">
-          <div className="relative">
-            <input type={showPw ? 'text' : 'password'} value={form.password} onChange={set('password')}
-              required placeholder="••••••••" autoComplete="current-password" className="input-field pr-10" />
-            <button type="button" onClick={() => setShowPw(s => !s)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-t40 hover:text-t70 transition-colors">
-              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+        {error && (
+          <div className="flex items-start gap-2 rounded-xl border border-danger-40 bg-danger-10 p-3 text-sm text-danger mb-5">
+            <AlertCircle size={15} className="mt-0.5 shrink-0" />
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Field label="Email address">
+            <input type="email" value={form.email} onChange={set('email')} required
+              placeholder="you@example.com" autoComplete="email" className="input-field" />
+          </Field>
+
+          <Field label="Password">
+            <div className="relative">
+              <input
+                type={showPw ? 'text' : 'password'}
+                value={form.password}
+                onChange={set('password')}
+                required
+                placeholder="••••••••"
+                autoComplete="current-password"
+                className="input-field pr-10"
+              />
+              <button type="button" onClick={() => setShowPw(s => !s)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors text-t40 hover:text-t70">
+                {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+          </Field>
+
+          <div className="flex justify-end -mt-1">
+            <button type="button" onClick={() => setForgotMode(true)}
+              className="text-xs font-medium transition-colors"
+              style={{ color: 'var(--accent)' }}>
+              Forgot password?
             </button>
           </div>
-        </Field>
 
-        <div className="flex justify-end">
-          <button type="button" onClick={() => setForgotMode(true)} className="text-xs text-accent hover:text-[#E8A020] transition-colors">
-            Forgot password?
+          <button type="submit" disabled={loading}
+            className="btn-primary w-full flex items-center justify-center gap-2 !py-3 !text-sm">
+            {loading ? 'Signing in…' : 'Sign in'}
+            {!loading && <ArrowRight size={15} />}
           </button>
-        </div>
+        </form>
 
-        <button type="submit" disabled={loading} className="btn-primary w-full">
-          {loading ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
+        <p className="mt-6 text-center text-sm" style={{ color: 'var(--text-40)' }}>
+          Don't have an account?{' '}
+          <Link to="/register" className="font-medium transition-colors"
+            style={{ color: 'var(--accent)' }}>
+            Create one
+          </Link>
+        </p>
 
-      <p className="mt-6 text-center text-sm text-t40">
-        Don't have an account?{' '}
-        <Link to="/register" className="text-[#E8A020] hover:text-accent transition-colors font-medium">
-          Create one
-        </Link>
-      </p>
-
-      <div className="mt-8 rounded-xl border border-t08 bg-[#F5F0E8]/03 p-3 text-xs text-t30 text-center">
-        Demo: alex@hobbyist.app / password123
-      </div>
-    </AuthShell>
-  )
-}
-
-function AuthShell({ children }) {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: 'var(--bg)' }}>
-      <div className="w-full max-w-sm">
-        <div className="flex items-center gap-2 mb-8 justify-center">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#E8A020' }}>
-            <BookOpen size={16} style={{ color: 'var(--bg)' }} />
-          </div>
-          <span className="font-display text-xl font-semibold" style={{ color: 'var(--text)' }}>Hobbyist</span>
-        </div>
-        <div className="rounded-2xl p-6 border border-t08" style={{ background: 'var(--surface)', color: 'var(--text)' }}>
-          {children}
+        <div className="mt-8 rounded-xl border border-t08 p-3 text-xs text-center"
+             style={{ background: 'var(--surface-04)', color: 'var(--text-30)' }}>
+          Demo: alex@hobbyist.app / password123
         </div>
       </div>
-    </div>
+    </AuthLayout>
   )
 }
 
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-t60 mb-1.5">{label}</label>
+      <label className="block text-xs font-medium mb-1.5 text-t60">{label}</label>
       {children}
     </div>
   )

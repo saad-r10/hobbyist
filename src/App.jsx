@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   BookOpen, Film, Mic, Gamepad2, Home, Compass, Trophy,
-  BarChart2, User, Heart, MessageCircle, Star,
+  BarChart2, User, MessageCircle, Star,
   ArrowLeft, Flame, Plus, Check, Clock, Send, LogOut,
   Users, AlertCircle, Loader2, X, Settings, Search, TrendingUp,
   PlayCircle, CheckCircle2, Sparkles, MessageSquare, Upload,
@@ -43,6 +43,23 @@ function Stars({ rating, max = 5 }) {
           stroke={i < Math.round(rating) ? 'var(--accent)' : 'var(--text-25)'}
           strokeWidth={1.5} />
       ))}
+    </div>
+  )
+}
+
+// Renders a cover image when available, falls back to a solid-color block.
+function CoverBlock({ coverUrl, coverColor, type, className = '', style = {} }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  const showImage = coverUrl && !imgFailed
+  return (
+    <div className={`relative overflow-hidden ${className}`} style={style}>
+      {showImage
+        ? <img src={coverUrl} alt="" onError={() => setImgFailed(true)}
+            className="w-full h-full object-cover" />
+        : <div className="w-full h-full flex items-center justify-center"
+            style={{ background: coverColor || 'var(--surface)' }}>
+            <TypeIcon type={type} size={Math.min(Number(style.width || 24), 24)} />
+          </div>}
     </div>
   )
 }
@@ -153,7 +170,7 @@ function ActivityBadge({ type, accent, size = 22 }) {
   )
 }
 
-const QUICK_REACTIONS = ['👍', '❤️', '🎉', '👏']
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '🎉', '😮']
 
 function InlineReactionBar({ item }) {
   const [active, setActive] = useState(null)
@@ -188,6 +205,86 @@ function InlineReactionBar({ item }) {
         <MessageCircle size={13} />
         {item.commentCount > 0 ? item.commentCount : ''}
       </button>
+    </div>
+  )
+}
+
+function EmojiPickerPopover({ onPick, onClose, above = true }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) onClose() }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  return (
+    <div ref={ref}
+      className="absolute left-0 z-50 flex gap-0.5 p-1 rounded-xl shadow-xl border border-t12"
+      style={{
+        background: 'var(--surface)',
+        ...(above ? { bottom: '100%', marginBottom: 4 } : { top: '100%', marginTop: 4 }),
+      }}>
+      {QUICK_REACTIONS.map(emoji => (
+        <button key={emoji} onClick={() => onPick(emoji)}
+          className="w-8 h-8 flex items-center justify-center text-base rounded-lg transition-transform hover:scale-125 active:scale-95"
+          style={{ background: 'transparent' }}
+          title={emoji}>
+          {emoji}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function applyReactionToggle(reactions, emoji, reacted) {
+  const exists = reactions.find(r => r.emoji === emoji)
+  if (reacted) {
+    if (exists) return reactions.map(r => r.emoji === emoji ? { ...r, count: r.count + 1, reactedByMe: true } : r)
+    return [...reactions, { emoji, count: 1, reactedByMe: true, users: ['You'] }]
+  } else {
+    return reactions
+      .map(r => r.emoji === emoji ? { ...r, count: r.count - 1, reactedByMe: false } : r)
+      .filter(r => r.count > 0)
+  }
+}
+
+function ReactionBar({ reactions = [], onReact, compact = false }) {
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  return (
+    <div className="flex items-center gap-1 flex-wrap relative">
+      {reactions.map(r => (
+        <button key={r.emoji} onClick={() => onReact(r.emoji)}
+          title={r.users?.join(', ')}
+          className="flex items-center gap-0.5 rounded-full text-xs transition-all hover:scale-110 active:scale-95"
+          style={{
+            padding: compact ? '1px 6px' : '2px 8px',
+            background: r.reactedByMe ? 'var(--accent-15)' : 'var(--surface2)',
+            border: `1px solid ${r.reactedByMe ? 'var(--accent)' : 'transparent'}`,
+            opacity: r.reactedByMe ? 1 : 0.75,
+          }}>
+          <span>{r.emoji}</span>
+          <span className="ml-0.5 text-t60">{r.count}</span>
+        </button>
+      ))}
+      <div className="relative">
+        <button onClick={() => setPickerOpen(p => !p)}
+          className="flex items-center justify-center rounded-full text-t30 hover:text-t60 transition-all"
+          style={{
+            width: compact ? 20 : 24,
+            height: compact ? 20 : 24,
+            background: pickerOpen ? 'var(--surface2)' : 'transparent',
+            fontSize: compact ? 11 : 13,
+          }}>
+          +
+        </button>
+        {pickerOpen && (
+          <EmojiPickerPopover
+            onPick={(emoji) => { onReact(emoji); setPickerOpen(false) }}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
+      </div>
     </div>
   )
 }
@@ -497,14 +594,24 @@ function DiscussionTab({ clubId, accent }) {
     finally { setPosting(false) }
   }
 
-  async function toggleLike(postId) {
+  async function toggleReaction(postId, targetType, targetId, emoji) {
+    const url = targetType === 'post'
+      ? `/posts/${targetId}/react`
+      : `/posts/${postId}/replies/${targetId}/react`
     try {
-      const res = await post(`/posts/${postId}/like`, {})
-      setData(prev => prev.map(p => p.id === postId
-        ? { ...p, likedByMe: res.liked, likeCount: p.likeCount + (res.liked ? 1 : -1) }
-        : p
-      ))
-    } catch { /* optimistic like already applied */ }
+      const res = await post(url, { emoji })
+      setData(prev => prev.map(p => {
+        if (targetType === 'post' && p.id === targetId) {
+          return { ...p, reactions: applyReactionToggle(p.reactions, emoji, res.reacted) }
+        }
+        if (targetType === 'reply' && p.id === postId) {
+          return { ...p, replies: p.replies.map(r =>
+            r.id === targetId ? { ...r, reactions: applyReactionToggle(r.reactions, emoji, res.reacted) } : r
+          )}
+        }
+        return p
+      }))
+    } catch { /* ignore */ }
   }
 
   async function submitReply(postId) {
@@ -564,10 +671,19 @@ function DiscussionTab({ clubId, accent }) {
           {expanded[p.id] && p.replies.map((r, i) => (
             <div key={i} className="flex gap-2.5 mb-2 pl-4 border-l-2" style={{ borderColor: withAlpha(accent, 19) }}>
               <Avatar user={r.user} size={24} />
-              <div>
+              <div className="flex-1 min-w-0">
                 <span className="font-medium text-xs" style={{ color: accent }}>{r.user?.displayName}</span>
                 <span className="text-xs text-t30 ml-1.5">{r.time}</span>
                 <p className="text-sm text-t70 mt-0.5">{r.text}</p>
+                {r.reactions !== undefined && (
+                  <div className="mt-1.5">
+                    <ReactionBar
+                      reactions={r.reactions || []}
+                      onReact={(emoji) => toggleReaction(p.id, 'reply', r.id, emoji)}
+                      compact
+                    />
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -581,27 +697,25 @@ function DiscussionTab({ clubId, accent }) {
             </div>
           )}
 
-          <div className="flex items-center gap-4 pt-3 border-t border-t06 mt-2">
-            <button onClick={() => toggleLike(p.id)}
-              className="flex items-center gap-1.5 text-xs transition-colors"
-              style={{ color: p.likedByMe ? '#E87070' : 'var(--text-35)' }}>
-              <Heart size={12} fill={p.likedByMe ? '#E87070' : 'none'} />
-              {p.likeCount > 0 && p.likeCount}
-            </button>
+          <div className="flex items-center gap-3 pt-3 border-t border-t06 mt-2">
+            <ReactionBar
+              reactions={p.reactions || []}
+              onReact={(emoji) => toggleReaction(p.id, 'post', p.id, emoji)}
+            />
             <button onClick={() => setExpanded(e => ({ ...e, [p.id]: !e[p.id] }))}
-              className="flex items-center gap-1.5 text-xs text-t40 hover:text-t70 transition-colors">
+              className="flex items-center gap-1.5 text-xs text-t40 hover:text-t70 transition-colors ml-auto">
               <MessageCircle size={12} />
               {p.replyCount > 0 ? `${p.replyCount} ${p.replyCount === 1 ? 'reply' : 'replies'}` : 'Reply'}
             </button>
             {p.replyCount > 0 && (
               <button onClick={() => { setExpanded(e => ({ ...e, [p.id]: !e[p.id] })); setReplyingTo(p.id) }}
-                className="text-xs text-t30 hover:text-t60 ml-auto transition-colors">
-                {expanded[p.id] ? 'Hide' : 'Show replies'}
+                className="text-xs text-t30 hover:text-t60 transition-colors">
+                {expanded[p.id] ? 'Hide' : 'Show'}
               </button>
             )}
             {!expanded[p.id] && (
               <button onClick={() => setReplyingTo(r => r === p.id ? null : p.id)}
-                className="text-xs ml-auto transition-colors"
+                className="text-xs transition-colors"
                 style={{ color: replyingTo === p.id ? accent : 'var(--text-30)' }}>
                 Reply
               </button>
@@ -617,6 +731,7 @@ function ChatTab({ clubId, currentUser, accent }) {
   const { data: messages, loading, error, setData } = useApi(() => get(`/chat/${clubId}`), [clubId])
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [hoveredMsg, setHoveredMsg] = useState(null)
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -627,7 +742,7 @@ function ChatTab({ clubId, currentUser, accent }) {
     e.preventDefault()
     if (!text.trim() || sending) return
     setSending(true)
-    const optimistic = { id: Date.now(), text: text.trim(), time: 'just now', user: currentUser, createdAt: new Date().toISOString() }
+    const optimistic = { id: Date.now(), text: text.trim(), time: 'just now', user: currentUser, createdAt: new Date().toISOString(), reactions: [] }
     setData(prev => [...(prev || []), optimistic])
     setText('')
     try {
@@ -638,6 +753,16 @@ function ChatTab({ clubId, currentUser, accent }) {
       setText(optimistic.text)
       alert(err.message)
     } finally { setSending(false) }
+  }
+
+  async function toggleChatReaction(msgId, emoji) {
+    try {
+      const res = await post(`/chat/messages/${msgId}/react`, { emoji })
+      setData(prev => prev.map(m => m.id === msgId
+        ? { ...m, reactions: applyReactionToggle(m.reactions || [], emoji, res.reacted) }
+        : m
+      ))
+    } catch { /* ignore */ }
   }
 
   if (loading) return <div className="flex items-center justify-center py-12"><Spinner /></div>
@@ -682,14 +807,38 @@ function ChatTab({ clubId, currentUser, accent }) {
                       : `${first ? r : s}px ${r}px ${r}px ${last ? r : s}px`
                     return (
                       <div key={msg.id}
-                        className="px-3.5 py-2 text-sm leading-relaxed"
-                        style={{
-                          background: mine ? accent : 'var(--surface2)',
-                          color: mine ? 'var(--accent-text)' : 'var(--text)',
-                          borderRadius,
-                          border: mine ? 'none' : '1px solid var(--border-06)',
-                        }}>
-                        {msg.text}
+                        onMouseEnter={() => setHoveredMsg(msg.id)}
+                        onMouseLeave={() => setHoveredMsg(null)}>
+                        <div className="flex items-center gap-1.5" style={{ flexDirection: mine ? 'row-reverse' : 'row' }}>
+                          <div
+                            className="px-3.5 py-2 text-sm leading-relaxed"
+                            style={{
+                              background: mine ? accent : 'var(--surface2)',
+                              color: mine ? 'var(--accent-text)' : 'var(--text)',
+                              borderRadius,
+                              border: mine ? 'none' : '1px solid var(--border-06)',
+                            }}>
+                            {msg.text}
+                          </div>
+                          {hoveredMsg === msg.id && (
+                            <div className="relative shrink-0">
+                              <EmojiPickerPopover
+                                onPick={(emoji) => toggleChatReaction(msg.id, emoji)}
+                                onClose={() => setHoveredMsg(null)}
+                                above
+                              />
+                            </div>
+                          )}
+                        </div>
+                        {msg.reactions?.length > 0 && (
+                          <div className={`mt-1 ${mine ? 'mr-1' : 'ml-1'}`}>
+                            <ReactionBar
+                              reactions={msg.reactions}
+                              onReact={(emoji) => toggleChatReaction(msg.id, emoji)}
+                              compact
+                            />
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -747,9 +896,8 @@ function PastItemsTab({ items }) {
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
       {items.map(item => (
         <div key={item.id} className="rounded-xl overflow-hidden border border-t06">
-          <div className="h-20 flex items-center justify-center" style={{ background: item.coverColor }}>
-            <TypeIcon type={item.type} size={24} />
-          </div>
+          <CoverBlock coverUrl={item.coverUrl} coverColor={item.coverColor} type={item.type}
+            className="h-20" />
           <div className="p-2.5" style={{ background: 'var(--surface)' }}>
             <p className="text-xs font-medium text-t90 truncate">{item.title}</p>
             <p className="text-xs text-t40 truncate">{item.subtitle}</p>
@@ -767,17 +915,33 @@ function PastItemsTab({ items }) {
 }
 
 function AddItemModal({ clubId, clubType, onClose, onAdded }) {
-  const [form, setForm] = useState({ title: '', subtitle: '', description: '', coverColor: 'var(--surface)' })
+  const [form, setForm] = useState({ title: '', subtitle: '', description: '' })
   const [loading, setLoading] = useState(false)
+  const [coverUrl, setCoverUrl] = useState(null)
+  const [coverLoading, setCoverLoading] = useState(false)
+  const coverTimerRef = useRef(null)
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
-  const COLORS = ['#2A1A0E','#0D1528','#0D2020','#1A1028','var(--surface)','#1A2850','#3A2020','#1E2A1A']
+  useEffect(() => {
+    clearTimeout(coverTimerRef.current)
+    if (!form.title || clubType === 'podcast') { setCoverUrl(null); return }
+    setCoverLoading(true)
+    coverTimerRef.current = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ title: form.title, subtitle: form.subtitle, type: clubType })
+        const res = await get(`/cover-art?${params}`)
+        setCoverUrl(res.coverUrl || null)
+      } catch { setCoverUrl(null) }
+      finally { setCoverLoading(false) }
+    }, 600)
+    return () => clearTimeout(coverTimerRef.current)
+  }, [form.title, form.subtitle, clubType])
 
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
     try {
-      const item = await post(`/clubs/${clubId}/items`, { ...form, type: clubType })
+      const item = await post(`/clubs/${clubId}/items`, { ...form, type: clubType, coverUrl })
       onAdded(item)
       onClose()
     } catch (err) { alert(err.message) }
@@ -792,19 +956,20 @@ function AddItemModal({ clubId, clubType, onClose, onAdded }) {
           <button onClick={onClose}><X size={18} className="text-t40" /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input value={form.title} onChange={set('title')} required placeholder="Title" className="input-field" />
-          <input value={form.subtitle} onChange={set('subtitle')} placeholder="Author / Director / Studio" className="input-field" />
-          <textarea value={form.description} onChange={set('description')} rows={2} placeholder="Description (optional)" className="input-field resize-none" />
-          <div>
-            <p className="text-xs text-t50 mb-2">Cover color</p>
-            <div className="flex gap-2 flex-wrap">
-              {COLORS.map(c => (
-                <button key={c} type="button" onClick={() => setForm(f => ({ ...f, coverColor: c }))}
-                  className="w-7 h-7 rounded-lg border-2 transition-all"
-                  style={{ background: c, borderColor: form.coverColor === c ? 'var(--accent)' : 'transparent' }} />
-              ))}
+          <div className="flex gap-3 items-start">
+            <div className="w-14 h-20 rounded-lg overflow-hidden shrink-0 border border-t08 flex items-center justify-center" style={{ background: 'var(--surface2)' }}>
+              {coverLoading
+                ? <Spinner size={16} />
+                : coverUrl
+                  ? <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+                  : <TypeIcon type={clubType} size={20} />}
+            </div>
+            <div className="flex-1 space-y-3">
+              <input value={form.title} onChange={set('title')} required placeholder="Title" className="input-field" />
+              <input value={form.subtitle} onChange={set('subtitle')} placeholder="Author / Director / Studio" className="input-field" />
             </div>
           </div>
+          <textarea value={form.description} onChange={set('description')} rows={2} placeholder="Description (optional)" className="input-field resize-none" />
           <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Setting…' : 'Set as current'}</button>
         </form>
       </div>
@@ -1753,10 +1918,10 @@ function Analytics() {
 // ── Profile ───────────────────────────────────────────────────────────────
 
 const SOURCE_META = {
-  letterboxd: { label: 'Letterboxd', color: '#00AC34' },
-  goodreads:  { label: 'Goodreads',  color: '#553B08' },
-  manual:     { label: 'Manual',     color: 'var(--accent)' },
-  club:       { label: 'Clubs',      color: 'var(--color-film)' },
+  letterboxd: { label: 'Letterboxd', color: '#00AC34',           Icon: Film },
+  goodreads:  { label: 'Goodreads',  color: '#C16B27',           Icon: BookOpen },
+  manual:     { label: 'Manual',     color: 'var(--accent)',      Icon: Upload },
+  club:       { label: 'Clubs',      color: 'var(--color-film)',  Icon: Users },
 }
 
 function Profile({ onLogout }) {
@@ -1793,76 +1958,80 @@ function Profile({ onLogout }) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="rounded-2xl p-5 border border-t06" style={{ background: 'var(--surface)' }}>
-        <div className="flex items-start gap-4 mb-4">
-          <Avatar user={profile} size={56} />
-          <div className="flex-1 min-w-0">
-            <h2 className="font-display text-fs-2xl font-bold truncate" style={{ color: 'var(--text)' }}>{profile?.displayName}</h2>
-            <p className="text-sm text-t40">@{profile?.username}</p>
-            {profile?.bio && <p className="text-sm text-t60 mt-1.5 leading-relaxed">{profile.bio}</p>}
-          </div>
+      {/* Banner + identity card */}
+      <div className="rounded-2xl overflow-hidden border border-t06" style={{ background: 'var(--surface)' }}>
+        {/* Gradient banner */}
+        <div className="relative h-24" style={{ background: 'var(--gradient-warm)' }}>
           <button onClick={() => setEditing(e => !e)}
-            className="rounded-xl p-2 transition-colors"
-            style={{ background: 'var(--border-06)' }}>
-            <Settings size={15} className="text-t50" />
+            className="absolute top-3 right-3 rounded-xl p-2 transition-colors"
+            style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(4px)' }}>
+            <Settings size={14} style={{ color: 'rgba(255,255,255,0.85)' }} />
           </button>
         </div>
 
-        {editing && (
-          <form onSubmit={saveProfile} className="space-y-3 pt-3 border-t border-t08 mt-3">
-            <div>
-              <label className="block text-xs text-t50 mb-1">Display name</label>
-              <input value={form.displayName} onChange={e => setForm(f => ({ ...f, displayName: e.target.value }))} className="input-field text-sm" />
+        {/* Avatar overlapping banner */}
+        <div className="px-5 pb-5">
+          <div className="flex items-end justify-between" style={{ marginTop: '-28px', marginBottom: '12px' }}>
+            <div className="rounded-full p-1" style={{ background: 'var(--surface)', boxShadow: 'var(--elevation-2)' }}>
+              <Avatar user={profile} size={56} />
             </div>
-            <div>
-              <label className="block text-xs text-t50 mb-1">Bio</label>
-              <textarea value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} rows={3} maxLength={300} className="input-field text-sm resize-none" />
+          </div>
+
+          <h2 className="font-display text-fs-2xl font-bold leading-tight" style={{ color: 'var(--text)' }}>{profile?.displayName}</h2>
+          <p className="text-sm text-t40 mb-1">@{profile?.username}</p>
+          {profile?.bio && <p className="text-sm text-t60 leading-relaxed">{profile.bio}</p>}
+
+          {/* Interests inline */}
+          {profile?.interests?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {profile.interests.map(id => {
+                const info = INTEREST_MAP[id] || { label: id }
+                return <span key={id} className="badge badge-accent">{info.label}</span>
+              })}
             </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setEditing(false)} className="btn-ghost flex-1 text-sm py-1.5">Cancel</button>
-              <button type="submit" disabled={saving} className="btn-primary flex-1 text-sm py-1.5">{saving ? 'Saving…' : 'Save'}</button>
-            </div>
-          </form>
-        )}
+          )}
+
+          {editing && (
+            <form onSubmit={saveProfile} className="space-y-3 pt-4 border-t border-t08 mt-4">
+              <div>
+                <label className="block text-xs text-t50 mb-1">Display name</label>
+                <input value={form.displayName} onChange={e => setForm(f => ({ ...f, displayName: e.target.value }))} className="input-field text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs text-t50 mb-1">Bio</label>
+                <textarea value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} rows={3} maxLength={300} className="input-field text-sm resize-none" />
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setEditing(false)} className="btn-ghost flex-1 text-sm py-1.5">Cancel</button>
+                <button type="submit" disabled={saving} className="btn-primary flex-1 text-sm py-1.5">{saving ? 'Saving…' : 'Save'}</button>
+              </div>
+            </form>
+          )}
+        </div>
 
         {/* Stats strip */}
-        <div className="grid grid-cols-3 gap-0 pt-4 border-t border-t08 mt-4">
+        <div className="grid grid-cols-3 border-t border-t08">
           {[
-            { val: analytics?.summary?.finished ?? me?.stats?.finished ?? 0, label: 'Total' },
+            { val: analytics?.summary?.finished ?? me?.stats?.finished ?? 0, label: 'Finished' },
             { val: me?.stats?.clubs ?? 0, label: 'Clubs' },
             { val: analytics?.summary?.avgRating ? `${analytics.summary.avgRating}★` : '—', label: 'Avg rating' },
           ].map((s, i) => (
-            <div key={i} className="text-center">
-              <p className="text-xl font-bold" style={{ color: 'var(--accent)' }}>{s.val}</p>
-              <p className="text-xs text-t40">{s.label}</p>
+            <div key={i} className={`py-4 text-center ${i < 2 ? 'border-r border-t08' : ''}`}>
+              <p className="text-fs-xl font-bold font-display" style={{ color: 'var(--accent)' }}>{s.val}</p>
+              <p className="text-fs-xs text-t40 mt-0.5">{s.label}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Interests */}
-      {profile?.interests?.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {profile.interests.map(id => {
-            const info = INTEREST_MAP[id] || { label: id }
-            return (
-              <span key={id} className="badge badge-accent">
-                {info.label}
-              </span>
-            )
-          })}
-        </div>
-      )}
-
       {/* Import history */}
-      <div className="rounded-2xl p-4 border border-t06" style={{ background: 'var(--surface)' }}>
-        <div className="flex items-center justify-between mb-3">
+      <div className="rounded-2xl border border-t06 overflow-hidden" style={{ background: 'var(--surface)' }}>
+        <div className="flex items-center justify-between px-4 pt-4 pb-3">
           <div>
-            <h3 className="text-sm font-semibold text-t80">Import history</h3>
+            <h3 className="text-fs-sm font-semibold text-t80">Import history</h3>
             {analytics?.summary?.imported > 0 && (
-              <p className="text-xs text-t40 mt-0.5">
-                {analytics.summary.imported} items imported from external platforms
+              <p className="text-fs-xs text-t40 mt-0.5">
+                {analytics.summary.imported} items from external platforms
               </p>
             )}
           </div>
@@ -1874,22 +2043,28 @@ function Profile({ onLogout }) {
         </div>
 
         {Object.keys(importSources).length > 0 ? (
-          <div className="space-y-2">
+          <div className="divide-y divide-t06">
             {Object.entries(importSources).map(([source, count]) => {
-              const meta = SOURCE_META[source] || { label: source, color: 'var(--accent)' }
+              const meta = SOURCE_META[source] || { label: source, color: 'var(--accent)', Icon: Upload }
+              const SrcIcon = meta.Icon
               return (
-                <div key={source} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ background: meta.color }} />
-                    <span className="text-sm text-t70">{meta.label}</span>
+                <div key={source} className="flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg p-1.5" style={{ background: meta.color + '20' }}>
+                      <SrcIcon size={13} style={{ color: meta.color }} />
+                    </div>
+                    <span className="text-fs-sm font-medium text-t80">{meta.label}</span>
                   </div>
-                  <span className="text-sm font-medium text-t60">{count} items</span>
+                  <span className="text-fs-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: meta.color + '18', color: meta.color }}>
+                    {count} items
+                  </span>
                 </div>
               )
             })}
           </div>
         ) : (
-          <p className="text-sm text-t30 text-center py-2">
+          <p className="text-fs-sm text-t30 text-center px-4 py-5">
             No imports yet. Bring in your Letterboxd or Goodreads history.
           </p>
         )}

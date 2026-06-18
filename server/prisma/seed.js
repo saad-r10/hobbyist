@@ -36,7 +36,7 @@ async function addPosts(clubId, userIds, posts) {
       })
     }
     for (const li of (p.likes || [])) {
-      await prisma.postLike.create({ data: { userId: userIds[li], postId: post.id } }).catch(() => {})
+      await prisma.reaction.create({ data: { userId: userIds[li], targetType: 'post', targetId: post.id, emoji: '❤️' } }).catch(() => {})
     }
   }
 }
@@ -56,7 +56,7 @@ async function addChat(clubId, userIds, messages) {
 
 async function main() {
   console.log('Clearing database...')
-  await prisma.$executeRawUnsafe('DELETE FROM PostLike')
+  await prisma.reaction.deleteMany()
   await prisma.reply.deleteMany()
   await prisma.post.deleteMany()
   await prisma.chatMessage.deleteMany()
