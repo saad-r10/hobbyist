@@ -15,6 +15,7 @@ import ImportModal from './components/ImportModal.jsx'
 import NotificationBell from './components/NotificationBell.jsx'
 import SearchModal from './components/SearchModal.jsx'
 import Sidebar from './components/Sidebar.jsx'
+import { useSocket } from './hooks/useSocket.js'
 
 // ── Utility components ──────────────────────────────────────────────────
 
@@ -407,7 +408,17 @@ function groupFeedItems(data) {
 }
 
 function GlobalFeed() {
-  const { data, loading, error, refetch } = useApi(() => get('/feed'))
+  const { data, loading, error, refetch, setData } = useApi(() => get('/feed'))
+
+  useSocket({
+    'feed:activity': useCallback((activity) => {
+      setData(prev => {
+        if (!prev) return [activity]
+        if (prev.some(a => a.id === activity.id)) return prev
+        return [activity, ...prev]
+      })
+    }, [setData]),
+  })
 
   if (loading) return <div className="space-y-3">{[...Array(5)].map((_, i) => <SkeletonCard key={i} />)}</div>
   if (error) return <ErrorState message={error} onRetry={refetch} />
@@ -733,6 +744,17 @@ function ChatTab({ clubId, currentUser, accent }) {
   const [sending, setSending] = useState(false)
   const [hoveredMsg, setHoveredMsg] = useState(null)
   const bottomRef = useRef(null)
+
+  useSocket({
+    'chat:message': useCallback((msg) => {
+      setData(prev => {
+        if (!prev) return [msg]
+        // Ignore if already present (dedup with optimistic or prior socket delivery)
+        if (prev.some(m => m.id === msg.id)) return prev
+        return [...prev, msg]
+      })
+    }, [setData]),
+  })
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })

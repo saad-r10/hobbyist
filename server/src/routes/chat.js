@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client'
 import { requireAuth } from '../middleware/auth.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { notifyChatMessage } from '../lib/notifications.js'
+import { emitChatMessage } from '../lib/socketServer.js'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -92,14 +93,19 @@ router.post('/:clubId', requireAuth, [
 
   await notifyChatMessage(prisma, { clubId, actorId: req.userId })
 
-  res.status(201).json({
+  const formatted = {
     id: msg.id,
     text: msg.text,
     time: formatTime(msg.createdAt),
     createdAt: msg.createdAt,
     user: msg.user,
     reactions: [],
-  })
+  }
+
+  // Broadcast to all club members except the sender (they have optimistic UI)
+  emitChatMessage(clubId, formatted)
+
+  res.status(201).json(formatted)
 }))
 
 // POST /api/chat/messages/:msgId/react

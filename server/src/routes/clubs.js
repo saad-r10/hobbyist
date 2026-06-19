@@ -4,9 +4,20 @@ import { PrismaClient } from '@prisma/client'
 import { requireAuth } from '../middleware/auth.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { notifyClubJoin } from '../lib/notifications.js'
+import { emitFeedActivity } from '../lib/socketServer.js'
+import { formatActivity } from '../lib/activityFormat.js'
 
 const router = Router()
 const prisma = new PrismaClient()
+
+async function createAndEmitActivity(data) {
+  const record = await prisma.activity.create({
+    data,
+    include: { user: { select: { id: true, displayName: true, avatarColor: true, avatarInitials: true, username: true } } },
+  })
+  emitFeedActivity(data.userId, formatActivity(record))
+  return record
+}
 
 const CLUB_TYPES = {
   book: { emoji: '📚', accent: '#C47D5A', bg: '#2A1A0E' },
@@ -191,9 +202,7 @@ router.post('/', requireAuth, [
 
   await prisma.clubMember.create({ data: { userId: req.userId, clubId: club.id, role: 'admin' } })
 
-  await prisma.activity.create({
-    data: { userId: req.userId, type: 'created_club', clubName: club.name }
-  })
+  await createAndEmitActivity({ userId: req.userId, type: 'created_club', clubName: club.name })
 
   res.status(201).json(await formatClub(club, req.userId))
 }))
@@ -210,9 +219,7 @@ router.post('/:id/join', requireAuth, asyncHandler(async (req, res) => {
   if (existing) return res.status(409).json({ error: 'Already a member' })
 
   await prisma.clubMember.create({ data: { userId: req.userId, clubId } })
-  await prisma.activity.create({
-    data: { userId: req.userId, type: 'joined_club', clubName: club.name }
-  })
+  await createAndEmitActivity({ userId: req.userId, type: 'joined_club', clubName: club.name })
   await notifyClubJoin(prisma, { clubId, actorId: req.userId })
 
   res.json({ ok: true })
@@ -299,9 +306,7 @@ router.post('/:id/rate', requireAuth, [
     create: { userId: req.userId, itemId: currentItem.id, rating, review: review || '' },
   })
 
-  await prisma.activity.create({
-    data: { userId: req.userId, type: 'rated', title: currentItem.title, rating, clubName: '' }
-  })
+  await createAndEmitActivity({ userId: req.userId, type: 'rated', title: currentItem.title, rating, clubName: '' })
 
   res.json(saved)
 }))
