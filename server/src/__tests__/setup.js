@@ -7,7 +7,7 @@ afterEach(async () => {
   // Delete in dependency order; cascade handles children
   await prisma.activity.deleteMany()
   await prisma.memberProgress.deleteMany()
-  await prisma.postLike.deleteMany()
+  await prisma.reaction.deleteMany()
   await prisma.reply.deleteMany()
   await prisma.post.deleteMany()
   await prisma.chatMessage.deleteMany()
