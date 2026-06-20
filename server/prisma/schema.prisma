@@ -29,7 +29,7 @@ model User {
   activities      Activity[]
   refreshTokens   RefreshToken[]
   resetTokens     PasswordReset[]
-  likesGiven      PostLike[]
+  reactions       Reaction[]
   progress        MemberProgress[]
   personalRatings PersonalRating[]
   notifications       Notification[] @relation("NotificationRecipient")
@@ -113,7 +113,6 @@ model Post {
   club    Club       @relation(fields: [clubId], references: [id], onDelete: Cascade)
   user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   replies Reply[]
-  likes   PostLike[]
   notifications Notification[]
 }
 
@@ -128,14 +127,18 @@ model Reply {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model PostLike {
-  userId Int
-  postId Int
+model Reaction {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  targetType String   // "post" | "reply" | "chat"
+  targetId   Int
+  emoji      String
+  createdAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  @@id([userId, postId])
+  @@unique([userId, targetType, targetId, emoji])
+  @@index([targetType, targetId])
 }
 
 model ChatMessage {

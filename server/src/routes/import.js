@@ -3,6 +3,8 @@ import { body, validationResult } from 'express-validator'
 import { PrismaClient } from '@prisma/client'
 import { requireAuth } from '../middleware/auth.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
+import { emitFeedActivity } from '../lib/socketServer.js'
+import { formatActivity } from '../lib/activityFormat.js'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -53,15 +55,17 @@ router.post('/', requireAuth, [
     }
   }
 
-  // Log as an activity
-  await prisma.activity.create({
+  // Log as an activity and push to clubmates' feeds
+  const record = await prisma.activity.create({
     data: {
       userId,
       type: 'import',
       title: `${imported} items`,
       extra: JSON.stringify({ source, imported, skipped }),
-    }
+    },
+    include: { user: { select: { id: true, displayName: true, avatarColor: true, avatarInitials: true, username: true } } },
   })
+  emitFeedActivity(userId, formatActivity(record))
 
   res.json({ imported, skipped, total: items.length })
 }))

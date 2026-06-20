@@ -3,10 +3,12 @@ import { body, validationResult } from 'express-validator'
 import { PrismaClient } from '@prisma/client'
 import { requireAuth } from '../middleware/auth.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
-import { notifyNewPost, notifyReply, notifyLike } from '../lib/notifications.js'
+import { notifyNewPost, notifyReply, notifyReaction } from '../lib/notifications.js'
 
 const router = Router()
 const prisma = new PrismaClient()
+
+const ALLOWED_EMOJI = ['👍', '❤️', '😂', '🎉', '😮']
 
 function timeAgo(date) {
   const diff = Date.now() - new Date(date).getTime()
@@ -19,6 +21,17 @@ function timeAgo(date) {
   return `${d}d ago`
 }
 
+function groupReactions(reactions, userId) {
+  const byEmoji = {}
+  for (const r of reactions) {
+    if (!byEmoji[r.emoji]) byEmoji[r.emoji] = { emoji: r.emoji, count: 0, reactedByMe: false, users: [] }
+    byEmoji[r.emoji].count++
+    byEmoji[r.emoji].users.push(r.user.displayName)
+    if (r.userId === userId) byEmoji[r.emoji].reactedByMe = true
+  }
+  return Object.values(byEmoji).sort((a, b) => b.count - a.count)
+}
+
 // GET /api/posts/club/:clubId
 router.get('/club/:clubId', requireAuth, asyncHandler(async (req, res) => {
   const clubId = Number(req.params.clubId)
@@ -28,14 +41,40 @@ router.get('/club/:clubId', requireAuth, asyncHandler(async (req, res) => {
     include: {
       user: { select: { id: true, displayName: true, avatarColor: true, avatarInitials: true, username: true } },
       replies: {
-        include: { user: { select: { id: true, displayName: true, avatarColor: true, avatarInitials: true, username: true } } },
+        include: {
+          user: { select: { id: true, displayName: true, avatarColor: true, avatarInitials: true, username: true } },
+        },
         orderBy: { createdAt: 'asc' },
       },
-      likes: { select: { userId: true } },
-      _count: { select: { replies: true, likes: true } },
     },
     orderBy: { createdAt: 'desc' },
   })
+
+  const postIds = posts.map(p => p.id)
+  const replyIds = posts.flatMap(p => p.replies.map(r => r.id))
+
+  const [postReactions, replyReactions] = await Promise.all([
+    prisma.reaction.findMany({
+      where: { targetType: 'post', targetId: { in: postIds } },
+      include: { user: { select: { displayName: true } } },
+    }),
+    replyIds.length ? prisma.reaction.findMany({
+      where: { targetType: 'reply', targetId: { in: replyIds } },
+      include: { user: { select: { displayName: true } } },
+    }) : Promise.resolve([]),
+  ])
+
+  const postRxByTarget = {}
+  for (const r of postReactions) {
+    if (!postRxByTarget[r.targetId]) postRxByTarget[r.targetId] = []
+    postRxByTarget[r.targetId].push(r)
+  }
+
+  const replyRxByTarget = {}
+  for (const r of replyReactions) {
+    if (!replyRxByTarget[r.targetId]) replyRxByTarget[r.targetId] = []
+    replyRxByTarget[r.targetId].push(r)
+  }
 
   const formatted = posts.map(p => ({
     id: p.id,
@@ -44,14 +83,14 @@ router.get('/club/:clubId', requireAuth, asyncHandler(async (req, res) => {
     time: timeAgo(p.createdAt),
     createdAt: p.createdAt,
     user: p.user,
-    likeCount: p._count.likes,
-    replyCount: p._count.replies,
-    likedByMe: p.likes.some(l => l.userId === req.userId),
+    reactions: groupReactions(postRxByTarget[p.id] || [], req.userId),
+    replyCount: p.replies.length,
     replies: p.replies.map(r => ({
       id: r.id,
       text: r.text,
       time: timeAgo(r.createdAt),
       user: r.user,
+      reactions: groupReactions(replyRxByTarget[r.id] || [], req.userId),
     })),
   }))
 
@@ -88,34 +127,63 @@ router.post('/club/:clubId', requireAuth, [
     time: 'just now',
     createdAt: post.createdAt,
     user: post.user,
-    likeCount: 0,
+    reactions: [],
     replyCount: 0,
-    likedByMe: false,
     replies: [],
   })
 }))
 
-// POST /api/posts/:id/like
-router.post('/:id/like', requireAuth, asyncHandler(async (req, res) => {
-  const postId = Number(req.params.id)
+// POST /api/posts/:id/react
+router.post('/:id/react', requireAuth, [
+  body('emoji').isIn(ALLOWED_EMOJI),
+], asyncHandler(async (req, res) => {
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() })
+
+  const targetId = Number(req.params.id)
+  const { emoji } = req.body
   const userId = req.userId
 
-  const existing = await prisma.postLike.findUnique({
-    where: { userId_postId: { userId, postId } }
+  const existing = await prisma.reaction.findUnique({
+    where: { userId_targetType_targetId_emoji: { userId, targetType: 'post', targetId, emoji } }
   })
 
   if (existing) {
-    await prisma.postLike.delete({ where: { userId_postId: { userId, postId } } })
-    res.json({ liked: false })
+    await prisma.reaction.delete({ where: { id: existing.id } })
+    res.json({ reacted: false, emoji })
   } else {
-    await prisma.postLike.create({ data: { userId, postId } })
+    await prisma.reaction.create({ data: { userId, targetType: 'post', targetId, emoji } })
 
-    const post = await prisma.post.findUnique({ where: { id: postId }, select: { userId: true, clubId: true } })
+    const post = await prisma.post.findUnique({ where: { id: targetId }, select: { userId: true, clubId: true } })
     if (post) {
-      await notifyLike(prisma, { postOwnerId: post.userId, actorId: userId, clubId: post.clubId, postId })
+      await notifyReaction(prisma, { postOwnerId: post.userId, actorId: userId, clubId: post.clubId, postId: targetId })
     }
 
-    res.json({ liked: true })
+    res.json({ reacted: true, emoji })
+  }
+}))
+
+// POST /api/posts/:id/replies/:replyId/react
+router.post('/:id/replies/:replyId/react', requireAuth, [
+  body('emoji').isIn(ALLOWED_EMOJI),
+], asyncHandler(async (req, res) => {
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() })
+
+  const targetId = Number(req.params.replyId)
+  const { emoji } = req.body
+  const userId = req.userId
+
+  const existing = await prisma.reaction.findUnique({
+    where: { userId_targetType_targetId_emoji: { userId, targetType: 'reply', targetId, emoji } }
+  })
+
+  if (existing) {
+    await prisma.reaction.delete({ where: { id: existing.id } })
+    res.json({ reacted: false, emoji })
+  } else {
+    await prisma.reaction.create({ data: { userId, targetType: 'reply', targetId, emoji } })
+    res.json({ reacted: true, emoji })
   }
 }))
 
@@ -137,7 +205,7 @@ router.post('/:id/replies', requireAuth, [
     await notifyReply(prisma, { postOwnerId: post.userId, actorId: req.userId, clubId: post.clubId, postId })
   }
 
-  res.status(201).json({ id: reply.id, text: reply.text, time: 'just now', user: reply.user })
+  res.status(201).json({ id: reply.id, text: reply.text, time: 'just now', user: reply.user, reactions: [] })
 }))
 
 export default router
