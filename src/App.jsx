@@ -5,12 +5,12 @@ import {
   ArrowLeft, Flame, Plus, Check, Clock, Send, LogOut,
   Users, AlertCircle, Loader2, X, Settings, Search, TrendingUp,
   PlayCircle, CheckCircle2, Sparkles, MessageSquare, Upload,
-  ChevronLeft, ChevronRight, Download,
+  ChevronLeft, ChevronRight, Download, Calendar,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext.jsx'
 import { useTheme } from './contexts/ThemeContext.jsx'
-import { get, post, put } from './api/client.js'
+import { get, post, put, patch } from './api/client.js'
 import ImportModal from './components/ImportModal.jsx'
 import NotificationBell from './components/NotificationBell.jsx'
 import SearchModal from './components/SearchModal.jsx'
@@ -18,6 +18,12 @@ import Sidebar from './components/Sidebar.jsx'
 import { useSocket } from './hooks/useSocket.js'
 
 // ── Utility components ──────────────────────────────────────────────────
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null
+  const diff = new Date(dateStr) - new Date()
+  return Math.ceil(diff / (1000 * 60 * 60 * 24))
+}
 
 function Avatar({ user, size = 32 }) {
   if (!user) return <div className="rounded-full bg-s10" style={{ width: size, height: size }} />
@@ -936,8 +942,53 @@ function PastItemsTab({ items }) {
   )
 }
 
+function EventEditor({ clubId, initial, accent, onSaved, onCancel }) {
+  const [dueDate, setDueDate] = useState(initial.dueDate ? new Date(initial.dueDate).toISOString().split('T')[0] : '')
+  const [eventLabel, setEventLabel] = useState(initial.eventLabel || '')
+  const [saving, setSaving] = useState(false)
+
+  async function save() {
+    setSaving(true)
+    try {
+      await patch(`/clubs/${clubId}/items/current`, {
+        dueDate: dueDate || null,
+        eventLabel: eventLabel || null,
+      })
+      onSaved()
+    } catch (err) { alert(err.message) }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div className="mt-2 p-2 rounded-lg border border-t08" style={{ background: 'var(--surface2)' }}>
+      <div className="flex gap-2 mb-2">
+        <input value={eventLabel} onChange={e => setEventLabel(e.target.value)}
+          placeholder="Label (e.g. Finish by)" className="input-field flex-1 text-xs py-1" maxLength={100} />
+        <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
+          className="input-field text-xs py-1 w-32" />
+      </div>
+      <div className="flex gap-2">
+        <button onClick={save} disabled={saving}
+          className="flex-1 text-xs py-1 rounded-lg font-medium"
+          style={{ background: accent, color: 'var(--bg)' }}>
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+        {initial.dueDate && (
+          <button onClick={async () => {
+            setSaving(true)
+            try { await patch(`/clubs/${clubId}/items/current`, { dueDate: null, eventLabel: null }); onSaved() }
+            catch (err) { alert(err.message) }
+            finally { setSaving(false) }
+          }} className="text-xs py-1 px-2 rounded-lg text-t40 hover:text-t70">Clear</button>
+        )}
+        <button onClick={onCancel} className="text-xs py-1 px-2 rounded-lg text-t40 hover:text-t70">Cancel</button>
+      </div>
+    </div>
+  )
+}
+
 function AddItemModal({ clubId, clubType, onClose, onAdded }) {
-  const [form, setForm] = useState({ title: '', subtitle: '', description: '' })
+  const [form, setForm] = useState({ title: '', subtitle: '', description: '', dueDate: '', eventLabel: '' })
   const [loading, setLoading] = useState(false)
   const [coverUrl, setCoverUrl] = useState(null)
   const [coverLoading, setCoverLoading] = useState(false)
@@ -963,7 +1014,10 @@ function AddItemModal({ clubId, clubType, onClose, onAdded }) {
     e.preventDefault()
     setLoading(true)
     try {
-      const item = await post(`/clubs/${clubId}/items`, { ...form, type: clubType, coverUrl })
+      const payload = { ...form, type: clubType, coverUrl }
+      if (!payload.dueDate) delete payload.dueDate
+      if (!payload.eventLabel) delete payload.eventLabel
+      const item = await post(`/clubs/${clubId}/items`, payload)
       onAdded(item)
       onClose()
     } catch (err) { alert(err.message) }
@@ -989,6 +1043,14 @@ function AddItemModal({ clubId, clubType, onClose, onAdded }) {
             <div className="flex-1 space-y-3">
               <input value={form.title} onChange={set('title')} required placeholder="Title" className="input-field" />
               <input value={form.subtitle} onChange={set('subtitle')} placeholder="Author / Director / Studio" className="input-field" />
+            </div>
+          </div>
+          <textarea value={form.description} onChange={set('description')} rows={2} placeholder="Description (optional)" className="input-field resize-none" />
+          <div className="border-t border-t08 pt-3">
+            <p className="text-xs text-t40 mb-2 flex items-center gap-1"><Calendar size={11} /> Target date (optional)</p>
+            <div className="flex gap-2">
+              <input value={form.eventLabel} onChange={set('eventLabel')} placeholder="e.g. Finish by, Watch party" className="input-field flex-1 text-sm" maxLength={100} />
+              <input type="date" value={form.dueDate} onChange={set('dueDate')} className="input-field w-36 text-sm" min={new Date().toISOString().split('T')[0]} />
             </div>
           </div>
           <textarea value={form.description} onChange={set('description')} rows={2} placeholder="Description (optional)" className="input-field resize-none" />
@@ -1044,6 +1106,7 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
   const [showAddItem, setShowAddItem] = useState(false)
   const [showRate, setShowRate] = useState(false)
   const [progress, setProgress] = useState(null)
+  const [showEventEditor, setShowEventEditor] = useState(false)
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -1121,6 +1184,41 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
                 <p className="text-xs text-t50 truncate">{club.currentItem.subtitle}</p>
               </div>
             </div>
+
+            {/* Due date countdown */}
+            {club.currentItem.dueDate && (() => {
+              const days = daysUntil(club.currentItem.dueDate)
+              const label = club.currentItem.eventLabel || 'Due'
+              const urgent = days !== null && days <= 3
+              const overdue = days !== null && days < 0
+              return (
+                <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                  style={{ background: overdue ? '#ef444420' : urgent ? '#f9731620' : 'var(--accent-12)',
+                    color: overdue ? '#ef4444' : urgent ? '#f97316' : 'var(--accent)' }}>
+                  <Calendar size={10} />
+                  {overdue
+                    ? `${label} — ${Math.abs(days)}d overdue`
+                    : days === 0
+                      ? `${label} — today!`
+                      : `${label} — ${days}d left`}
+                </div>
+              )
+            })()}
+            {isAdmin && !showEventEditor && (
+              <button onClick={() => setShowEventEditor(true)}
+                className="mt-1 block text-xs text-t30 hover:text-t60 transition-colors">
+                {club.currentItem.dueDate ? 'Edit target date' : '+ Set target date'}
+              </button>
+            )}
+            {isAdmin && showEventEditor && (
+              <EventEditor
+                clubId={clubId}
+                initial={{ dueDate: club.currentItem.dueDate, eventLabel: club.currentItem.eventLabel }}
+                accent="var(--accent)"
+                onSaved={() => { setShowEventEditor(false); refetch() }}
+                onCancel={() => setShowEventEditor(false)}
+              />
+            )}
 
             {/* Member avatar stack */}
             {club.members?.length > 0 && (
