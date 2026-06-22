@@ -34,6 +34,7 @@ model User {
   personalRatings PersonalRating[]
   notifications       Notification[] @relation("NotificationRecipient")
   notificationsCaused Notification[] @relation("NotificationActor")
+  achievements        UserAchievement[]
 }
 
 model Club {
@@ -236,4 +237,16 @@ model Notification {
   post  Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([userId, read])
+}
+
+model UserAchievement {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  achievementId String
+  earnedAt      DateTime  @default(now())
+  seenAt        DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
 }

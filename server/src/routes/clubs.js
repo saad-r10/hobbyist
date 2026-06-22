@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client'
 import { requireAuth } from '../middleware/auth.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { notifyClubJoin } from '../lib/notifications.js'
+import { checkAchievements } from '../achievements.js'
 import { emitFeedActivity } from '../lib/socketServer.js'
 import { formatActivity } from '../lib/activityFormat.js'
 
@@ -92,6 +93,37 @@ router.get('/explore', requireAuth, asyncHandler(async (req, res) => {
 
   const formatted = await Promise.all(clubs.map(c => formatClub(c, req.userId)))
   res.json(formatted)
+}))
+
+// GET /api/clubs/public/:id — unauthenticated preview (public clubs only)
+router.get('/public/:id', asyncHandler(async (req, res) => {
+  const clubId = Number(req.params.id)
+  const club = await prisma.club.findUnique({ where: { id: clubId } })
+
+  if (!club || !club.isPublic) return res.status(404).json({ error: 'Club not found' })
+
+  const [currentItem, memberCount] = await Promise.all([
+    prisma.clubItem.findFirst({ where: { clubId, status: 'current' } }),
+    prisma.clubMember.count({ where: { clubId } }),
+  ])
+
+  res.json({
+    id: club.id,
+    name: club.name,
+    description: club.description,
+    type: club.type,
+    emoji: club.emoji,
+    accentColor: club.accentColor,
+    bgColor: club.bgColor,
+    memberCount,
+    currentItem: currentItem ? {
+      title: currentItem.title,
+      subtitle: currentItem.subtitle,
+      coverUrl: currentItem.coverUrl ?? null,
+      coverColor: currentItem.coverColor,
+      type: currentItem.type,
+    } : null,
+  })
 }))
 
 // GET /api/clubs/:id — single club with full detail
@@ -207,6 +239,7 @@ router.post('/', requireAuth, [
   await prisma.clubMember.create({ data: { userId: req.userId, clubId: club.id, role: 'admin' } })
 
   await createAndEmitActivity({ userId: req.userId, type: 'created_club', clubName: club.name })
+  await checkAchievements(prisma, req.userId)
 
   res.status(201).json(await formatClub(club, req.userId))
 }))
@@ -225,6 +258,7 @@ router.post('/:id/join', requireAuth, asyncHandler(async (req, res) => {
   await prisma.clubMember.create({ data: { userId: req.userId, clubId } })
   await createAndEmitActivity({ userId: req.userId, type: 'joined_club', clubName: club.name })
   await notifyClubJoin(prisma, { clubId, actorId: req.userId })
+  await checkAchievements(prisma, req.userId)
 
   res.json({ ok: true })
 }))
@@ -348,6 +382,7 @@ router.post('/:id/rate', requireAuth, [
   })
 
   await createAndEmitActivity({ userId: req.userId, type: 'rated', title: currentItem.title, rating, clubName: '' })
+  await checkAchievements(prisma, req.userId)
 
   res.json(saved)
 }))
