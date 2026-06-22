@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Maskable icon: safe zone is center 80% — fill entire bg, keep icon within inner 410×410 -->
+  <rect width="512" height="512" fill="#E8A020"/>
+  <path d="M304 120c9.82 0 15.52 11.12 9.82 19.08l-66.08 92.6H312c10.11 0 15.77 11.63 9.49 19.52L181.33 404.53c-7.1 9.04-21.6 4-21.6-7.47V310H120.96c-9.82 0-15.52-11.12-9.82-19.08l88-123.36c5.57-7.66 16.75-2.38 15.33 6.94L207.73 240h34.04L288 132c3.3-7.26 9.97-12 16-12z" fill="white"/>
+</svg>
