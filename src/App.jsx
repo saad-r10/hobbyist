@@ -300,7 +300,7 @@ function FeedCard({ item }) {
   const accent = activityAccent(item)
 
   return (
-    <div className="rounded-2xl p-4 border border-t06 fade-up" style={{ background: 'var(--surface)' }}>
+    <div className="rounded-2xl p-4 border border-t06 stagger-item card-hover" style={{ background: 'var(--surface)' }}>
       <div className="flex items-start gap-3 mb-3">
         <div className="relative shrink-0">
           <Avatar user={item.user} size={36} />
@@ -361,7 +361,7 @@ function FeedGroup({ group }) {
   }
 
   return (
-    <div className="rounded-2xl p-4 border border-t06 fade-up" style={{ background: 'var(--surface)' }}>
+    <div className="rounded-2xl p-4 border border-t06 stagger-item card-hover" style={{ background: 'var(--surface)' }}>
       <div className="flex items-center gap-3 mb-1">
         <Avatar user={group.user} size={36} />
         <div className="flex-1 min-w-0">
@@ -444,7 +444,7 @@ function GlobalFeed() {
 function ClubCard({ club, onClick }) {
   const accent = club.accentColor || 'var(--accent)'
   return (
-    <button onClick={onClick} className="w-full rounded-2xl p-4 text-left transition-all hover:scale-[1.01] active:scale-[0.99] border border-t06"
+    <button onClick={onClick} className="w-full rounded-2xl p-4 text-left stagger-item transition-all hover:scale-[1.01] active:scale-[0.99] border border-t06"
       style={{ background: 'var(--surface)' }}>
       <div className="flex items-start justify-between mb-3">
         <div>
@@ -1425,7 +1425,7 @@ function DiscoverClubCard({ club, onJoin }) {
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-t06 flex flex-col" style={{ background: 'var(--surface)' }}>
+    <div className="rounded-2xl overflow-hidden border border-t06 flex flex-col stagger-item card-hover" style={{ background: 'var(--surface)' }}>
       <div className="h-0.5" style={{ background: `linear-gradient(90deg, ${accent}, ${accent}40)` }} />
       <div className="p-4 flex flex-col gap-3 flex-1">
         <div className="flex items-start justify-between gap-2">
@@ -1690,7 +1690,7 @@ function Leaderboard() {
       <div className="flex gap-1 mb-5 p-1 rounded-xl w-fit mx-auto" style={{ background: 'var(--surface)' }}>
         {PERIODS.map(p => (
           <button key={p} onClick={() => setPeriod(p)}
-            className="px-4 py-1.5 text-xs font-medium rounded-lg capitalize transition-all"
+            className="px-4 py-1.5 text-xs font-medium rounded-lg capitalize transition-all active:scale-[0.97]"
             style={period === p ? { background: 'var(--accent)', color: 'var(--accent-text)' } : { color: 'var(--text-50)' }}>
             {p === 'all' ? 'All time' : p.charAt(0).toUpperCase() + p.slice(1)}
           </button>
@@ -1731,7 +1731,7 @@ function Leaderboard() {
         {rest.map((entry, idx) => {
           const pct = Math.max(4, Math.round((entry.score / maxScore) * 100))
           return (
-            <div key={entry.id} className="relative overflow-hidden rounded-xl border border-t06"
+            <div key={entry.id} className="relative overflow-hidden rounded-xl border border-t06 card-hover"
               style={{ background: 'var(--surface)', animation: `fadeUp var(--duration-base) var(--ease-out) ${idx * 35}ms both` }}>
               <div className="flex items-center gap-3 px-3 py-2.5">
                 <span className="text-sm font-semibold w-6 text-center text-t40">#{entry.rank}</span>
@@ -1872,7 +1872,7 @@ function Analytics() {
           { label: 'Clubs', val: summary?.clubs ?? 0, color: 'var(--color-film)' },
           { label: 'This year', val: summary?.thisYear ?? 0, color: 'var(--color-book)' },
         ].map(s => (
-          <div key={s.label} className="rounded-2xl p-4 border border-t06" style={{ background: 'var(--surface)' }}>
+          <div key={s.label} className="rounded-2xl p-4 border border-t06 stagger-item card-hover" style={{ background: 'var(--surface)' }}>
             <p className="text-2xl font-bold" style={{ color: s.color }}>{s.val}</p>
             <p className="text-xs text-t40 mt-0.5">{s.label}</p>
           </div>
