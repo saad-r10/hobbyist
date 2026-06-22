@@ -107,21 +107,22 @@ export default function Login() {
         </div>
 
         {error && (
-          <div className="flex items-start gap-2 rounded-xl border border-danger-40 bg-danger-10 p-3 text-sm text-danger mb-5">
-            <AlertCircle size={15} className="mt-0.5 shrink-0" />
+          <div role="alert" className="flex items-start gap-2 rounded-xl border border-danger-40 bg-danger-10 p-3 text-sm text-danger mb-5">
+            <AlertCircle size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Email address">
-            <input type="email" value={form.email} onChange={set('email')} required
+          <Field label="Email address" htmlFor="login-email">
+            <input id="login-email" type="email" value={form.email} onChange={set('email')} required
               placeholder="you@example.com" autoComplete="email" className="input-field" />
           </Field>
 
-          <Field label="Password">
+          <Field label="Password" htmlFor="login-password">
             <div className="relative">
               <input
+                id="login-password"
                 type={showPw ? 'text' : 'password'}
                 value={form.password}
                 onChange={set('password')}
@@ -131,7 +132,8 @@ export default function Login() {
                 className="input-field pr-10"
               />
               <button type="button" onClick={() => setShowPw(s => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors text-t40 hover:text-t70">
+                aria-label={showPw ? 'Hide password' : 'Show password'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors text-t40 hover:text-t70 focus-ring rounded">
                 {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
@@ -169,10 +171,10 @@ export default function Login() {
   )
 }
 
-function Field({ label, children }) {
+function Field({ label, htmlFor, children }) {
   return (
     <div>
-      <label className="block text-xs font-medium mb-1.5 text-t60">{label}</label>
+      <label htmlFor={htmlFor} className="block text-xs font-medium mb-1.5 text-t60">{label}</label>
       {children}
     </div>
   )

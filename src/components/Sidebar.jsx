@@ -26,45 +26,48 @@ export default function Sidebar({
         {!collapsed && <span className="font-display text-base font-semibold whitespace-nowrap">Hobbyist</span>}
       </div>
 
-      <nav className="flex-1 flex flex-col gap-1 px-3 py-3 overflow-y-auto no-scrollbar">
+      <nav aria-label="Main navigation" className="flex-1 flex flex-col gap-1 px-3 py-3 overflow-y-auto no-scrollbar">
         {tabs.map(({ id, label, Icon }) => (
-          <button key={id} onClick={() => onTabChange(id)} title={collapsed ? label : undefined}
+          <button key={id} onClick={() => onTabChange(id)}
+            aria-label={collapsed ? label : undefined}
+            aria-current={activeTab === id ? 'page' : undefined}
             className="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium"
             style={activeTab === id ? { background: 'var(--accent-12)', color: '#E8A020' } : { color: 'var(--text-50)' }}>
-            <Icon size={18} className="shrink-0" />
+            <Icon size={18} className="shrink-0" aria-hidden="true" />
             {!collapsed && <span className="truncate">{label}</span>}
           </button>
         ))}
       </nav>
 
       <div className="flex flex-col gap-1 px-3 py-3 border-t border-t06">
-        <button onClick={onOpenSearch} title={collapsed ? 'Search' : undefined}
+        <button onClick={onOpenSearch} aria-label={collapsed ? 'Search' : undefined}
           className="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-50)' }}>
-          <Search size={18} className="shrink-0" />
+          <Search size={18} className="shrink-0" aria-hidden="true" />
           {!collapsed && <span>Search</span>}
         </button>
 
-        <button onClick={onToggleTheme} title={collapsed ? (isDark ? 'Switch to light mode' : 'Switch to dark mode') : undefined}
+        <button onClick={onToggleTheme} aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           className="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-50)' }}>
-          {isDark ? <Sun size={18} className="shrink-0" /> : <Moon size={18} className="shrink-0" />}
-          {!collapsed && <span>{isDark ? 'Light mode' : 'Dark mode'}</span>}
+          {isDark ? <Sun size={18} className="shrink-0" aria-hidden="true" /> : <Moon size={18} className="shrink-0" aria-hidden="true" />}
+          {!collapsed && <span aria-hidden="true">{isDark ? 'Light mode' : 'Dark mode'}</span>}
         </button>
 
         <div className="flex items-center gap-3 px-1 py-1 text-sm font-medium" style={{ color: 'var(--text-50)' }}>
           <NotificationBell onNavigate={onNotificationNavigate} />
-          {!collapsed && <span>Notifications</span>}
+          {!collapsed && <span aria-hidden="true">Notifications</span>}
         </div>
 
-        <button onClick={() => onTabChange('profile')} title={collapsed ? 'Your profile' : undefined}
+        <button onClick={() => onTabChange('profile')} aria-label={collapsed ? 'Your profile' : undefined}
+          aria-current={undefined}
           className="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-70)' }}>
           <Avatar user={user} size={26} />
           {!collapsed && <span className="truncate">{user?.displayName || 'Profile'}</span>}
         </button>
 
-        <button onClick={onToggleCollapsed} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        <button onClick={onToggleCollapsed} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-35)' }}>
-          {collapsed ? <ChevronsRight size={18} className="shrink-0" /> : <ChevronsLeft size={18} className="shrink-0" />}
-          {!collapsed && <span>Collapse</span>}
+          {collapsed ? <ChevronsRight size={18} className="shrink-0" aria-hidden="true" /> : <ChevronsLeft size={18} className="shrink-0" aria-hidden="true" />}
+          {!collapsed && <span aria-hidden="true">Collapse</span>}
         </button>
       </div>
     </aside>

@@ -211,7 +211,9 @@ function InlineReactionBar({ item }) {
       <div className="flex items-center gap-0.5">
         {QUICK_REACTIONS.map(emoji => (
           <button key={emoji} onClick={() => toggle(emoji)}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all hover:scale-110 active:scale-95"
+            aria-label={emoji}
+            aria-pressed={active === emoji}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all hover:scale-110 active:scale-95 focus-ring"
             style={{
               background: active === emoji ? 'var(--accent-15)' : 'transparent',
               filter: active && active !== emoji ? 'grayscale(1) opacity(0.45)' : 'none',
@@ -221,7 +223,7 @@ function InlineReactionBar({ item }) {
         ))}
         {count > 0 && <span className="text-xs text-t40 ml-0.5">{count}</span>}
       </div>
-      <button className="flex items-center gap-1.5 text-xs text-t35 hover:text-t60 transition-colors ml-auto">
+      <button aria-label={`${item.commentCount || 0} comments`} className="flex items-center gap-1.5 text-xs text-t35 hover:text-t60 transition-colors ml-auto focus-ring">
         <MessageCircle size={13} />
         {item.commentCount > 0 ? item.commentCount : ''}
       </button>
@@ -246,9 +248,9 @@ function EmojiPickerPopover({ onPick, onClose, above = true }) {
       }}>
       {QUICK_REACTIONS.map(emoji => (
         <button key={emoji} onClick={() => onPick(emoji)}
-          className="w-8 h-8 flex items-center justify-center text-base rounded-lg transition-transform hover:scale-125 active:scale-95"
-          style={{ background: 'transparent' }}
-          title={emoji}>
+          aria-label={emoji}
+          className="w-8 h-8 flex items-center justify-center text-base rounded-lg transition-transform hover:scale-125 active:scale-95 focus-ring"
+          style={{ background: 'transparent' }}>
           {emoji}
         </button>
       ))}
@@ -275,21 +277,25 @@ function ReactionBar({ reactions = [], onReact, compact = false }) {
     <div className="flex items-center gap-1 flex-wrap relative">
       {reactions.map(r => (
         <button key={r.emoji} onClick={() => onReact(r.emoji)}
-          title={r.users?.join(', ')}
-          className="flex items-center gap-0.5 rounded-full text-xs transition-all hover:scale-110 active:scale-95"
+          aria-label={`${r.emoji} — ${r.count} ${r.count === 1 ? 'reaction' : 'reactions'}${r.reactedByMe ? ', reacted' : ''}`}
+          aria-pressed={r.reactedByMe}
+          className="flex items-center gap-0.5 rounded-full text-xs transition-all hover:scale-110 active:scale-95 focus-ring"
           style={{
             padding: compact ? '1px 6px' : '2px 8px',
             background: r.reactedByMe ? 'var(--accent-15)' : 'var(--surface2)',
             border: `1px solid ${r.reactedByMe ? 'var(--accent)' : 'transparent'}`,
             opacity: r.reactedByMe ? 1 : 0.75,
           }}>
-          <span>{r.emoji}</span>
+          <span aria-hidden="true">{r.emoji}</span>
           <span className="ml-0.5 text-t60">{r.count}</span>
         </button>
       ))}
       <div className="relative">
         <button onClick={() => setPickerOpen(p => !p)}
-          className="flex items-center justify-center rounded-full text-t30 hover:text-t60 transition-all"
+          aria-label="Add reaction"
+          aria-expanded={pickerOpen}
+          aria-haspopup="true"
+          className="flex items-center justify-center rounded-full text-t30 hover:text-t60 transition-all focus-ring"
           style={{
             width: compact ? 20 : 24,
             height: compact ? 20 : 24,
@@ -487,6 +493,12 @@ function CreateClubModal({ onClose, onCreated }) {
   const [error, setError] = useState('')
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
   const TYPES = [
     { id: 'book', label: 'Book', emoji: '📚' },
     { id: 'film', label: 'Film', emoji: '🎬' },
@@ -511,13 +523,13 @@ function CreateClubModal({ onClose, onCreated }) {
 
   return (
     <div className="modal-overlay flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-      <div className="modal-panel w-full max-w-md p-5" onClick={e => e.stopPropagation()}>
+      <div className="modal-panel w-full max-w-md p-5" role="dialog" aria-modal="true" aria-labelledby="create-club-title" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-display text-lg font-semibold">Create a club</h3>
-          <button onClick={onClose} className="modal-close"><X size={18} /></button>
+          <h3 id="create-club-title" className="font-display text-lg font-semibold">Create a club</h3>
+          <button onClick={onClose} aria-label="Close" className="modal-close"><X size={18} /></button>
         </div>
 
-        {error && <p className="toast toast-error mb-3">{error}</p>}
+        {error && <p role="alert" className="toast toast-error mb-3">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -530,13 +542,14 @@ function CreateClubModal({ onClose, onCreated }) {
             <div className="grid grid-cols-4 gap-2">
               {TYPES.map(t => (
                 <button key={t.id} type="button" onClick={() => setForm(f => ({ ...f, type: t.id }))}
-                  className="rounded-xl py-2 text-center text-xs border transition-all"
+                  aria-pressed={form.type === t.id}
+                  className="rounded-xl py-2 text-center text-xs border transition-all focus-ring"
                   style={{
                     background: form.type === t.id ? 'var(--accent-15)' : 'var(--surface-04)',
                     borderColor: form.type === t.id ? 'var(--accent)' : 'var(--border-08)',
                     color: form.type === t.id ? 'var(--accent)' : 'var(--text-50)',
                   }}>
-                  <div className="text-base mb-0.5">{t.emoji}</div>
+                  <div className="text-base mb-0.5" aria-hidden="true">{t.emoji}</div>
                   {t.label}
                 </button>
               ))}
@@ -548,9 +561,10 @@ function CreateClubModal({ onClose, onCreated }) {
               placeholder="What's this club about?" className="input-field resize-none" />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-t60">Public club</span>
-            <button type="button" onClick={() => setForm(f => ({ ...f, isPublic: !f.isPublic }))}
-              className="w-11 h-6 rounded-full transition-colors relative"
+            <span id="public-club-label" className="text-sm text-t60">Public club</span>
+            <button type="button" role="switch" aria-checked={form.isPublic} aria-labelledby="public-club-label"
+              onClick={() => setForm(f => ({ ...f, isPublic: !f.isPublic }))}
+              className="w-11 h-6 rounded-full transition-colors relative focus-ring"
               style={{ background: form.isPublic ? 'var(--accent)' : 'var(--text-15)' }}>
               <div className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all"
                 style={{ left: form.isPublic ? '1.375rem' : '0.25rem' }} />
@@ -1018,6 +1032,12 @@ function AddItemModal({ clubId, clubType, onClose, onAdded }) {
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
   useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  useEffect(() => {
     clearTimeout(coverTimerRef.current)
     if (!form.title || clubType === 'podcast') { setCoverUrl(null); return }
     setCoverLoading(true)
@@ -1048,10 +1068,10 @@ function AddItemModal({ clubId, clubType, onClose, onAdded }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: 'var(--overlay)' }} onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl p-5 border border-t08" style={{ background: 'var(--surface)', color: 'var(--text)' }} onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-md rounded-2xl p-5 border border-t08" role="dialog" aria-modal="true" aria-labelledby="add-item-title" style={{ background: 'var(--surface)', color: 'var(--text)' }} onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-display text-lg font-semibold">Set current item</h3>
-          <button onClick={onClose}><X size={18} className="text-t40" /></button>
+          <h3 id="add-item-title" className="font-display text-lg font-semibold">Set current item</h3>
+          <button onClick={onClose} aria-label="Close" className="modal-close"><X size={18} /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="flex gap-3 items-start">
@@ -1089,6 +1109,12 @@ function RateModal({ clubId, itemTitle, onClose, onRated }) {
   const [review, setReview] = useState('')
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   async function submit() {
     if (!rating) return
     setLoading(true)
@@ -1102,12 +1128,14 @@ function RateModal({ clubId, itemTitle, onClose, onRated }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'var(--overlay)' }} onClick={onClose}>
-      <div className="w-full max-w-sm rounded-2xl p-5 border border-t08" style={{ background: 'var(--surface)', color: 'var(--text)' }} onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-sm rounded-2xl p-5 border border-t08" role="dialog" aria-modal="true" aria-label="Rate this item" style={{ background: 'var(--surface)', color: 'var(--text)' }} onClick={e => e.stopPropagation()}>
         <h3 className="font-display text-lg font-semibold mb-1">Rate this item</h3>
         <p className="text-sm text-t50 mb-4 truncate">"{itemTitle}"</p>
-        <div className="flex gap-2 justify-center mb-4">
+        <div className="flex gap-2 justify-center mb-4" role="group" aria-label="Rating">
           {[1,2,3,4,5].map(v => (
-            <button key={v} onMouseEnter={() => setHover(v)} onMouseLeave={() => setHover(0)} onClick={() => setRating(v)}>
+            <button key={v} aria-label={`${v} star${v > 1 ? 's' : ''}`} aria-pressed={rating === v}
+              onMouseEnter={() => setHover(v)} onMouseLeave={() => setHover(0)} onClick={() => setRating(v)}
+              className="focus-ring rounded">
               <Star size={32} fill={(hover || rating) >= v ? 'var(--accent)' : 'none'} stroke={(hover || rating) >= v ? 'var(--accent)' : 'var(--text-30)'} strokeWidth={1.5} />
             </button>
           ))}
@@ -1293,14 +1321,14 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
       )}
 
       {/* Sub-tabs */}
-      <div className="flex gap-1 mb-4 p-1 rounded-xl border border-t06" style={{ background: 'var(--surface)' }}>
+      <div role="tablist" className="flex gap-1 mb-4 p-1 rounded-xl border border-t06" style={{ background: 'var(--surface)' }}>
         {SUB_TABS.map(({ id, label, Icon }) => (
-          <button key={id} onClick={() => setSubTab(id)}
-            className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-medium rounded-lg transition-all"
+          <button key={id} role="tab" aria-selected={subTab === id} onClick={() => setSubTab(id)}
+            className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-medium rounded-lg transition-all focus-ring"
             style={subTab === id
               ? { background: 'var(--accent)', color: 'var(--accent-text)' }
               : { color: 'var(--text-50)' }}>
-            <Icon size={11} />
+            <Icon size={11} aria-hidden="true" />
             {label}
           </button>
         ))}
@@ -1416,25 +1444,27 @@ function FeaturedCarousel({ clubs, onJoin }) {
 
         {featured.length > 1 && (
           <>
-            <button onClick={prev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full hidden sm:flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
+            <button onClick={prev} aria-label="Previous slide"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full hidden sm:flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity focus-ring"
               style={{ background: 'var(--surface)', border: '1px solid var(--border-08)' }}>
-              <ChevronLeft size={16} className="text-themed" />
+              <ChevronLeft size={16} className="text-themed" aria-hidden="true" />
             </button>
-            <button onClick={next}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full hidden sm:flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
+            <button onClick={next} aria-label="Next slide"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full hidden sm:flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity focus-ring"
               style={{ background: 'var(--surface)', border: '1px solid var(--border-08)' }}>
-              <ChevronRight size={16} className="text-themed" />
+              <ChevronRight size={16} className="text-themed" aria-hidden="true" />
             </button>
           </>
         )}
       </div>
 
       {featured.length > 1 && (
-        <div className="flex justify-center gap-1.5">
+        <div className="flex justify-center gap-1.5" role="group" aria-label="Carousel slides">
           {featured.map((_, i) => (
             <button key={i} onClick={() => setIdx(i)}
-              className="rounded-full transition-all duration-300"
+              aria-label={`Slide ${i + 1}`}
+              aria-current={i === idx ? 'true' : undefined}
+              className="rounded-full transition-all duration-300 focus-ring"
               style={{ width: i === idx ? 20 : 6, height: 6, background: i === idx ? accent : 'var(--border-12)' }} />
           ))}
         </div>
@@ -2092,7 +2122,7 @@ function AchievementToast({ achievement, onDismiss }) {
         <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>Achievement Unlocked!</p>
         <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{achievement.name}</p>
       </div>
-      <button onClick={onDismiss} className="shrink-0" style={{ color: 'var(--text-30)' }}>
+      <button onClick={onDismiss} aria-label="Dismiss" className="modal-close shrink-0" style={{ color: 'var(--text-30)' }}>
         <X size={14} />
       </button>
     </div>
@@ -2393,7 +2423,7 @@ function DemoBanner() {
         {' '}<a href="https://github.com/saad-r10/hobbyist#getting-started" target="_blank" rel="noopener noreferrer"
           className="underline opacity-80 hover:opacity-100">Run locally</a> for the full app.
       </span>
-      <button onClick={() => setDismissed(true)} className="ml-4 opacity-70 hover:opacity-100 shrink-0">
+      <button onClick={() => setDismissed(true)} aria-label="Dismiss demo banner" className="modal-close ml-4 opacity-70 hover:opacity-100 shrink-0">
         <X size={14} />
       </button>
     </div>
@@ -2449,7 +2479,7 @@ function InstallBanner({ canInstall, onInstall, onDismiss }) {
         style={{ background: 'var(--accent)', color: '#0F1923' }}>
         Install
       </button>
-      <button onClick={onDismiss} className="shrink-0 opacity-50 hover:opacity-100"
+      <button onClick={onDismiss} aria-label="Dismiss" className="modal-close shrink-0 opacity-50 hover:opacity-100"
         style={{ color: 'var(--text)' }}>
         <X size={16} />
       </button>
@@ -2511,15 +2541,16 @@ export default function App() {
         />
 
         {/* Mobile/tablet bottom nav */}
-        <nav className="mobile-nav lg:hidden fixed bottom-0 left-0 right-0 z-40 flex border-t border-t06"
+        <nav aria-label="Main navigation" className="mobile-nav lg:hidden fixed bottom-0 left-0 right-0 z-40 flex border-t border-t06"
           style={{ background: 'var(--nav-bg-mobile)', backdropFilter: 'blur(12px)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="mobile-nav-indicator" style={{ width: `${100 / TABS.length}%`, transform: `translateX(${TABS.findIndex(t => t.id === tab) * 100}%)` }} />
           {TABS.map(({ id, label, Icon }) => (
             <button key={id} onClick={() => handleTabChange(id)}
+              aria-current={tab === id ? 'page' : undefined}
               className="mobile-nav-link flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[44px] relative z-10"
               style={{ color: tab === id ? 'var(--accent)' : 'var(--text-35)' }}>
               <span className="mobile-nav-icon-wrap flex flex-col items-center gap-0.5">
-                <Icon size={20} />
+                <Icon size={20} aria-hidden="true" />
                 <span className="text-[10px] font-medium">{label}</span>
               </span>
             </button>
