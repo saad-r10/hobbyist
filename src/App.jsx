@@ -92,21 +92,34 @@ function Spinner({ size = 20 }) {
 function ErrorState({ message, onRetry }) {
   return (
     <div className="flex flex-col items-center gap-3 py-12 text-center">
-      <AlertCircle size={24} className="text-[#E87070]/60" />
-      <p className="text-t50 text-sm">{message || 'Something went wrong'}</p>
-      {onRetry && <button onClick={onRetry} className="text-xs text-[#E8A020] hover:opacity-80">Try again</button>}
+      <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
+        style={{ background: 'color-mix(in srgb, #E87070 10%, transparent)' }}>
+        <AlertCircle size={20} style={{ color: '#E87070' }} />
+      </div>
+      <div>
+        <p className="text-t70 text-sm font-semibold">Something went wrong</p>
+        <p className="text-t40 text-xs mt-0.5">{message || 'An unexpected error occurred'}</p>
+      </div>
+      {onRetry && (
+        <button onClick={onRetry} className="btn-ghost text-xs px-4 py-1.5">Try again</button>
+      )}
     </div>
   )
 }
 
-function EmptyState({ icon: Icon, title, sub }) {
+function EmptyState({ icon: Icon, title, sub, cta, onCta }) {
   return (
     <div className="flex flex-col items-center gap-3 py-12 text-center">
-      <Icon size={28} className="text-t15" />
-      <div>
-        <p className="text-t50 text-sm font-medium">{title}</p>
-        {sub && <p className="text-t30 text-xs mt-1">{sub}</p>}
+      <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: 'var(--surface2)' }}>
+        <Icon size={20} className="text-t30" />
       </div>
+      <div>
+        <p className="text-t70 text-sm font-semibold">{title}</p>
+        {sub && <p className="text-t35 text-xs mt-1">{sub}</p>}
+      </div>
+      {cta && onCta && (
+        <button onClick={onCta} className="btn-ghost text-xs px-4 py-1.5">{cta}</button>
+      )}
     </div>
   )
 }
@@ -631,7 +644,7 @@ function DiscussionTab({ clubId, accent }) {
 }
 
 function ChatTab({ clubId, currentUser, accent }) {
-  const { data: messages, loading, error, setData } = useApi(() => get(`/chat/${clubId}`), [clubId])
+  const { data: messages, loading, error, setData, refetch } = useApi(() => get(`/chat/${clubId}`), [clubId])
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const bottomRef = useRef(null)
@@ -657,8 +670,17 @@ function ChatTab({ clubId, currentUser, accent }) {
     } finally { setSending(false) }
   }
 
-  if (loading) return <div className="flex items-center justify-center py-12"><Spinner /></div>
-  if (error) return <ErrorState message={error} />
+  if (loading) return (
+    <div className="space-y-3 py-2">
+      {[{w:'60%',r:true},{w:'45%',r:false},{w:'70%',r:true},{w:'55%',r:false},{w:'40%',r:true}].map((s,i) => (
+        <div key={i} className={`flex items-end gap-2 ${s.r ? 'flex-row-reverse' : ''}`}>
+          <div className="w-7 h-7 skeleton-circle shrink-0" />
+          <div className="h-9 skeleton-block" style={{ width: s.w, borderRadius: 16 }} />
+        </div>
+      ))}
+    </div>
+  )
+  if (error) return <ErrorState message={error} onRetry={refetch} />
 
   const isMe = (msg) => msg.user?.id === currentUser?.id
 
@@ -868,7 +890,15 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
     catch { /* fire-and-forget; optimistic update already applied */ }
   }
 
-  if (loading) return <div className="py-12 flex justify-center"><Spinner /></div>
+  if (loading) return (
+    <div className="space-y-4">
+      <div className="h-8 w-28 skeleton-block" />
+      <div className="h-16 skeleton-block" />
+      <div className="h-28 skeleton-block" />
+      <div className="flex gap-2">{[...Array(4)].map((_,i) => <div key={i} className="flex-1 h-9 skeleton-block" />)}</div>
+      <div className="space-y-3">{[...Array(3)].map((_,i) => <div key={i} className="h-20 skeleton-block" />)}</div>
+    </div>
+  )
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
   const myProgress = progress ?? club?.currentItem?.myProgress ?? 0
@@ -1358,6 +1388,11 @@ function Leaderboard() {
         ))}
       </div>
 
+      {!entries.length && (
+        <EmptyState icon={Trophy} title="No entries yet"
+          sub="Rate items you've finished to earn points and appear here." />
+      )}
+
       {/* Podium */}
       {top3.length >= 3 && (
         <div className="flex items-end justify-center gap-3 mb-6">
@@ -1710,7 +1745,7 @@ const SOURCE_META = {
 
 function Profile({ onLogout }) {
   const { user, updateUser } = useAuth()
-  const { data: me, loading, error } = useApi(() => get('/users/me'))
+  const { data: me, loading, error, refetch: refetchMe } = useApi(() => get('/users/me'))
   const { data: analytics, refetch: refetchAnalytics } = useApi(() => get('/analytics'))
   const { data: achievementsData } = useApi(() => get('/achievements'))
   const [editing, setEditing] = useState(false)
@@ -1752,8 +1787,20 @@ function Profile({ onLogout }) {
     finally { setSaving(false) }
   }
 
-  if (loading) return <div className="py-12 flex justify-center"><Spinner /></div>
-  if (error) return <ErrorState message={error} />
+  if (loading) return (
+    <div className="space-y-4">
+      <div className="rounded-2xl overflow-hidden border border-t06" style={{ background: 'var(--surface)' }}>
+        <div className="h-24 skeleton-block" style={{ borderRadius: 0 }} />
+        <div className="px-4 pb-4 pt-10 space-y-2">
+          <div className="h-5 w-40 skeleton-block" />
+          <div className="h-3.5 w-56 skeleton-block" />
+        </div>
+      </div>
+      <div className="h-28 skeleton-block" />
+      <div className="h-20 skeleton-block" />
+    </div>
+  )
+  if (error) return <ErrorState message={error} onRetry={refetchMe} />
 
   const profile = me || user
   const INTEREST_MAP = { book: { label: 'Books' }, film: { label: 'Films' }, podcast: { label: 'Podcasts' }, game: { label: 'Games' } }
