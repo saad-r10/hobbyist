@@ -202,14 +202,45 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 .page-transition { animation: pageEnter var(--duration-page) var(--ease-out) forwards; }
-@media (prefers-reduced-motion: reduce) {
-  .page-transition { animation: none; }
-}
 @keyframes pulseDot {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.35; }
 }
 .pulse-dot { animation: pulseDot var(--duration-slow) ease-in-out infinite; }
+
+/* Card hover lift — subtle elevation on hover for non-button cards */
+.card-hover {
+  transition: transform var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+.card-hover:hover { transform: translateY(-2px); box-shadow: var(--elevation-2); }
+
+/* Staggered list entrance — apply to direct list items */
+@keyframes staggerIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stagger-item {
+  opacity: 0;
+  animation: staggerIn var(--duration-base) var(--ease-out) both;
+}
+.stagger-item:nth-child(1) { animation-delay:   0ms; }
+.stagger-item:nth-child(2) { animation-delay:  40ms; }
+.stagger-item:nth-child(3) { animation-delay:  80ms; }
+.stagger-item:nth-child(4) { animation-delay: 120ms; }
+.stagger-item:nth-child(5) { animation-delay: 160ms; }
+.stagger-item:nth-child(n+6) { animation-delay: 200ms; }
+
+/* Respect prefers-reduced-motion for all motion utilities */
+@media (prefers-reduced-motion: reduce) {
+  .page-transition,
+  .fade-up,
+  .stagger-item { animation: none; opacity: 1; }
+  .pulse-dot    { animation: none; }
+  .shimmer      { animation: none; background: var(--shimmer-a); }
+  .card-hover   { transition: none; }
+  .card-hover:hover { transform: none; box-shadow: none; }
+}
 
 /* ── Scrollbars ─────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
