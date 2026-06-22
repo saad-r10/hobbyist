@@ -5,7 +5,7 @@ import {
   ArrowLeft, Flame, Plus, Check, Clock, Send, LogOut,
   Users, AlertCircle, Loader2, X, Settings, Search, TrendingUp,
   PlayCircle, CheckCircle2, Sparkles, MessageSquare, Upload,
-  ChevronLeft, ChevronRight, Download,
+  ChevronLeft, ChevronRight, Download, Smartphone,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext.jsx'
@@ -1987,6 +1987,63 @@ function DemoBanner() {
   )
 }
 
+function useInstallPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+  const dismissed = useRef(false)
+
+  useEffect(() => {
+    try { dismissed.current = localStorage.getItem('hobbyist-pwa-dismissed') === 'true' } catch { /* ignore */ }
+    const handler = (e) => {
+      if (dismissed.current) return
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  function install() {
+    if (!deferredPrompt) return
+    deferredPrompt.prompt()
+    deferredPrompt.userChoice.finally(() => setDeferredPrompt(null))
+  }
+
+  function dismiss() {
+    try { localStorage.setItem('hobbyist-pwa-dismissed', 'true') } catch { /* ignore */ }
+    dismissed.current = true
+    setDeferredPrompt(null)
+  }
+
+  return { canInstall: !!deferredPrompt, install, dismiss }
+}
+
+function InstallBanner({ canInstall, onInstall, onDismiss }) {
+  if (!canInstall) return null
+  return (
+    <div className="fixed bottom-20 left-4 right-4 lg:left-auto lg:right-6 lg:bottom-6 lg:w-80 z-50
+      flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border"
+      style={{ background: 'var(--surface)', borderColor: 'var(--accent)', color: 'var(--text)' }}>
+      <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
+        style={{ background: 'var(--accent)' }}>
+        <Smartphone size={18} color="#0F1923" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold leading-tight">Install Hobbyist</p>
+        <p className="text-xs leading-tight mt-0.5" style={{ color: 'var(--text-dim)' }}>Add to your home screen</p>
+      </div>
+      <button onClick={onInstall}
+        className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg"
+        style={{ background: 'var(--accent)', color: '#0F1923' }}>
+        Install
+      </button>
+      <button onClick={onDismiss} className="shrink-0 opacity-50 hover:opacity-100"
+        style={{ color: 'var(--text)' }}>
+        <X size={16} />
+      </button>
+    </div>
+  )
+}
+
 export default function App() {
   const { user, logout } = useAuth()
   const { isDark, toggle: toggleTheme } = useTheme()
@@ -1995,6 +2052,7 @@ export default function App() {
   const [selectedClub, setSelectedClub] = useState(null)
   const [showSearch, setShowSearch] = useState(false)
   const [pendingSubTab, setPendingSubTab] = useState(null)
+  const { canInstall, install, dismiss: dismissInstall } = useInstallPrompt()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return localStorage.getItem('hobbyist-sidebar-collapsed') === 'true' } catch { return false }
   })
@@ -2089,6 +2147,8 @@ export default function App() {
           onNavigateProfile={() => { setShowSearch(false); handleTabChange('profile') }}
         />
       )}
+
+      <InstallBanner canInstall={canInstall} onInstall={install} onDismiss={dismissInstall} />
     </div>
   )
 }

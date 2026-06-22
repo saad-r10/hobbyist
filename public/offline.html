@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Hobbyist — Offline</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      :root { --bg: #0F1923; --surface: #162030; --text: #F5F0E8; --accent: #E8A020; --text-dim: rgba(245,240,232,0.5); }
+      @media (prefers-color-scheme: light) {
+        :root { --bg: #F0E6D3; --surface: #EDE0C4; --text: #2C1810; --text-dim: rgba(44,24,16,0.55); }
+      }
+      body {
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'DM Sans', system-ui, sans-serif;
+        padding: 2rem;
+      }
+      .card {
+        background: var(--surface);
+        border-radius: 1.5rem;
+        padding: 3rem 2.5rem;
+        max-width: 360px;
+        width: 100%;
+        text-align: center;
+        border: 1px solid rgba(232,160,32,0.15);
+      }
+      .icon {
+        width: 72px;
+        height: 72px;
+        background: var(--accent);
+        border-radius: 20px;
+        margin: 0 auto 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .icon svg { width: 40px; height: 40px; }
+      h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; }
+      p { color: var(--text-dim); line-height: 1.6; margin-bottom: 1.75rem; font-size: 0.95rem; }
+      button {
+        background: var(--accent);
+        color: #0F1923;
+        border: none;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1.75rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        transition: opacity 0.15s;
+      }
+      button:hover { opacity: 0.85; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="icon">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22 6c2 0 3.2 2.3 2 3.9L16.4 18H23c2.1 0 3.3 2.4 2 4L11.4 34.5c-1.5 1.9-4.4.8-4.4-1.5V26H5c-2 0-3.2-2.3-2-3.9L19 5.7c1.2-1.6 3.4-.5 3.1 1.5l-1.5 8.8h7L22 6z" fill="white"/>
+        </svg>
+      </div>
+      <h1>You're offline</h1>
+      <p>Hobbyist needs a network connection to load. Check your connection and try again.</p>
+      <button onclick="window.location.reload()">Try again</button>
+    </div>
+  </body>
+</html>
