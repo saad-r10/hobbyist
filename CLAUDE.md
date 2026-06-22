@@ -1,4 +1,6 @@
-# CLAUDE.md — Hobbyist Development Guide
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 This file governs all development on the Hobbyist repository. Every AI-assisted change must follow these procedures.
 
@@ -60,11 +62,23 @@ npm run dev
 # Frontend only
 npx vite
 
-# Backend only
+# Backend only (production-like, no watch)
 npm run server
+
+# Backend with auto-reload (development)
+npm run server:dev
+
+# Run frontend tests
+npm test
+
+# Run server tests
+npm run test:server
 
 # Reset and reseed the database
 npm run db:reset
+
+# Open Prisma Studio (GUI for the database)
+cd server && npx prisma studio
 
 # Build demo (for GitHub Pages)
 npm run build:demo
@@ -114,14 +128,17 @@ Every PR must:
 ### Directory structure
 
 ```
-clubhouse/
+hobbyist/
 ├── src/                    # React frontend
 │   ├── api/
-│   │   ├── client.js       # API client + token refresh
-│   │   └── demo.js         # Mock data for GitHub Pages demo
+│   │   ├── client.js       # API client + token refresh + demo intercept
+│   │   └── demo.js         # Mock handlers for GitHub Pages demo mode
 │   ├── components/         # Shared UI components
+│   │   ├── AuthLayout.jsx  # Shared split-panel wrapper for auth pages
 │   │   ├── ImportModal.jsx
-│   │   └── SearchModal.jsx
+│   │   ├── NotificationBell.jsx
+│   │   ├── SearchModal.jsx
+│   │   └── Sidebar.jsx     # Desktop sidebar navigation
 │   ├── contexts/
 │   │   ├── AuthContext.jsx  # Login state + token management
 │   │   └── ThemeContext.jsx # Light/dark theme
@@ -130,7 +147,9 @@ clubhouse/
 │   │   ├── Register.jsx
 │   │   ├── Onboarding.jsx
 │   │   └── ResetPassword.jsx
-│   ├── App.jsx             # Main app + all 6 tabs
+│   ├── utils/
+│   │   └── csvParsers.js   # Goodreads/Letterboxd CSV import parsers
+│   ├── App.jsx             # Main app + all 6 tab components
 │   ├── main.jsx            # Router + providers
 │   └── index.css           # Design tokens + global styles
 ├── server/
@@ -138,11 +157,14 @@ clubhouse/
 │   │   ├── schema.prisma   # Database schema
 │   │   └── seed.js         # Demo data seeder
 │   └── src/
+│       ├── lib/
+│       │   └── notifications.js  # Notification creation helpers
 │       ├── middleware/
-│       │   ├── auth.js     # JWT verification
+│       │   ├── auth.js           # JWT verification
 │       │   └── errorHandler.js
-│       ├── routes/         # One file per resource
+│       ├── routes/               # One file per resource
 │       │   ├── auth.js
+│       │   ├── users.js
 │       │   ├── clubs.js
 │       │   ├── posts.js
 │       │   ├── chat.js
@@ -151,8 +173,14 @@ clubhouse/
 │       │   ├── leaderboard.js
 │       │   ├── analytics.js
 │       │   ├── import.js
-│       │   └── search.js
-│       └── index.js        # Express app entry point
+│       │   ├── search.js
+│       │   ├── notifications.js
+│       │   ├── coverArt.js
+│       │   └── achievements.js
+│       ├── services/
+│       │   └── coverArt.js       # Open Library / TMDB / IGDB API calls
+│       ├── app.js                # Express app (exported for tests)
+│       └── index.js              # Server entry point (calls app.listen)
 ├── .github/workflows/ci.yml
 ├── .claude/                # Claude operating procedures
 ├── .env.example
@@ -163,9 +191,11 @@ clubhouse/
 ### Key design decisions
 
 - **Single `App.jsx`** — all 6 tab components in one file for simplicity. Extract only when it exceeds maintainability.
-- **Demo mode** (`VITE_DEMO_MODE=true`) — bakes mock data into the bundle for static hosting (GitHub Pages). All API calls intercepted in `src/api/client.js`.
+- **Demo mode** (`VITE_DEMO_MODE=true`) — bakes mock data into the bundle for static hosting (GitHub Pages). All API calls are intercepted in `src/api/client.js` and routed to handlers in `src/api/demo.js` instead of hitting the server.
+- **Auth token storage** — the access token lives in a module-level variable in `src/api/client.js` (cleared on page reload). The refresh token is stored in an httpOnly cookie and used by `POST /api/auth/refresh` to issue a new access token. All `api()` calls automatically retry once after a 401.
 - **SQLite** — simple, zero-config for local dev. Migrate to PostgreSQL when deploying to a persistent host.
 - **No chart libraries** — all data visualizations built with CSS/SVG to keep bundle size down.
+- **Production single-process deploy** — in `NODE_ENV=production`, the Express server serves the compiled frontend from `dist/` directly, so only one process needs to run. The `CLIENT_ORIGIN` env var controls the CORS allow-list.
 
 ---
 
@@ -229,12 +259,13 @@ Copy `server/.env.example` → `server/.env` before first run.
 
 Required server variables:
 
-| Variable       | Description                            | Default (dev only)               |
-|----------------|----------------------------------------|----------------------------------|
-| `PORT`         | Express server port                    | `3001`                           |
-| `NODE_ENV`     | `development` or `production`          | `development`                    |
-| `JWT_SECRET`   | Random 32+ char string for JWT signing | `hobbyist-dev-secret-...`        |
-| `DATABASE_URL` | Prisma connection string               | `file:./prisma/dev.db`           |
+| Variable         | Description                            | Default (dev only)               |
+|------------------|----------------------------------------|----------------------------------|
+| `PORT`           | Express server port                    | `3001`                           |
+| `NODE_ENV`       | `development` or `production`          | `development`                    |
+| `JWT_SECRET`     | Random 32+ char string for JWT signing | `hobbyist-dev-secret-...`        |
+| `DATABASE_URL`   | Prisma connection string               | `file:./prisma/dev.db`           |
+| `CLIENT_ORIGIN`  | Allowed CORS origin in production      | `https://saad-r10.github.io`     |
 
 ---
 

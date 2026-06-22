@@ -5,9 +5,20 @@ import { requireAuth } from '../middleware/auth.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { notifyClubJoin } from '../lib/notifications.js'
 import { checkAchievements } from '../achievements.js'
+import { emitFeedActivity } from '../lib/socketServer.js'
+import { formatActivity } from '../lib/activityFormat.js'
 
 const router = Router()
 const prisma = new PrismaClient()
+
+async function createAndEmitActivity(data) {
+  const record = await prisma.activity.create({
+    data,
+    include: { user: { select: { id: true, displayName: true, avatarColor: true, avatarInitials: true, username: true } } },
+  })
+  emitFeedActivity(data.userId, formatActivity(record))
+  return record
+}
 
 const CLUB_TYPES = {
   book: { emoji: '📚', accent: '#C47D5A', bg: '#2A1A0E' },
@@ -49,6 +60,8 @@ async function formatClub(club, userId) {
       coverColor: currentItem.coverColor,
       coverUrl: currentItem.coverUrl ?? null,
       type: currentItem.type,
+      dueDate: currentItem.dueDate ?? null,
+      eventLabel: currentItem.eventLabel ?? null,
       myProgress,
     } : null,
   }
@@ -80,6 +93,37 @@ router.get('/explore', requireAuth, asyncHandler(async (req, res) => {
 
   const formatted = await Promise.all(clubs.map(c => formatClub(c, req.userId)))
   res.json(formatted)
+}))
+
+// GET /api/clubs/public/:id — unauthenticated preview (public clubs only)
+router.get('/public/:id', asyncHandler(async (req, res) => {
+  const clubId = Number(req.params.id)
+  const club = await prisma.club.findUnique({ where: { id: clubId } })
+
+  if (!club || !club.isPublic) return res.status(404).json({ error: 'Club not found' })
+
+  const [currentItem, memberCount] = await Promise.all([
+    prisma.clubItem.findFirst({ where: { clubId, status: 'current' } }),
+    prisma.clubMember.count({ where: { clubId } }),
+  ])
+
+  res.json({
+    id: club.id,
+    name: club.name,
+    description: club.description,
+    type: club.type,
+    emoji: club.emoji,
+    accentColor: club.accentColor,
+    bgColor: club.bgColor,
+    memberCount,
+    currentItem: currentItem ? {
+      title: currentItem.title,
+      subtitle: currentItem.subtitle,
+      coverUrl: currentItem.coverUrl ?? null,
+      coverColor: currentItem.coverColor,
+      type: currentItem.type,
+    } : null,
+  })
 }))
 
 // GET /api/clubs/:id — single club with full detail
@@ -163,6 +207,8 @@ router.get('/:id', requireAuth, asyncHandler(async (req, res) => {
       coverColor: currentItem.coverColor,
       coverUrl: currentItem.coverUrl ?? null,
       type: currentItem.type,
+      dueDate: currentItem.dueDate ?? null,
+      eventLabel: currentItem.eventLabel ?? null,
       myProgress,
     } : null,
     pastItems: formattedPast,
@@ -192,9 +238,7 @@ router.post('/', requireAuth, [
 
   await prisma.clubMember.create({ data: { userId: req.userId, clubId: club.id, role: 'admin' } })
 
-  await prisma.activity.create({
-    data: { userId: req.userId, type: 'created_club', clubName: club.name }
-  })
+  await createAndEmitActivity({ userId: req.userId, type: 'created_club', clubName: club.name })
   await checkAchievements(prisma, req.userId)
 
   res.status(201).json(await formatClub(club, req.userId))
@@ -212,9 +256,7 @@ router.post('/:id/join', requireAuth, asyncHandler(async (req, res) => {
   if (existing) return res.status(409).json({ error: 'Already a member' })
 
   await prisma.clubMember.create({ data: { userId: req.userId, clubId } })
-  await prisma.activity.create({
-    data: { userId: req.userId, type: 'joined_club', clubName: club.name }
-  })
+  await createAndEmitActivity({ userId: req.userId, type: 'joined_club', clubName: club.name })
   await notifyClubJoin(prisma, { clubId, actorId: req.userId })
   await checkAchievements(prisma, req.userId)
 
@@ -255,6 +297,8 @@ router.post('/:id/items', requireAuth, [
   body('type').isIn(['book', 'film', 'podcast', 'game']),
   body('coverColor').optional(),
   body('coverUrl').optional().isURL().withMessage('coverUrl must be a valid URL'),
+  body('dueDate').optional({ nullable: true }).isISO8601().withMessage('dueDate must be a valid date'),
+  body('eventLabel').optional({ nullable: true }).isLength({ max: 100 }).trim(),
 ], asyncHandler(async (req, res) => {
   const clubId = Number(req.params.id)
   const membership = await prisma.clubMember.findUnique({
@@ -263,6 +307,9 @@ router.post('/:id/items', requireAuth, [
   if (!membership || membership.role !== 'admin') {
     return res.status(403).json({ error: 'Only admins can add items' })
   }
+
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() })
 
   // Mark existing current item as past
   await prisma.clubItem.updateMany({
@@ -279,10 +326,42 @@ router.post('/:id/items', requireAuth, [
       type: req.body.type,
       coverColor: req.body.coverColor || '#162030',
       coverUrl: req.body.coverUrl || null,
+      dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null,
+      eventLabel: req.body.eventLabel || null,
     }
   })
 
   res.status(201).json(item)
+}))
+
+// PATCH /api/clubs/:id/items/current — update due date / event label (admin only)
+router.patch('/:id/items/current', requireAuth, [
+  body('dueDate').optional({ nullable: true }).isISO8601().withMessage('dueDate must be a valid date'),
+  body('eventLabel').optional({ nullable: true }).isLength({ max: 100 }).trim(),
+], asyncHandler(async (req, res) => {
+  const clubId = Number(req.params.id)
+  const membership = await prisma.clubMember.findUnique({
+    where: { userId_clubId: { userId: req.userId, clubId } }
+  })
+  if (!membership || membership.role !== 'admin') {
+    return res.status(403).json({ error: 'Only admins can update events' })
+  }
+
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() })
+
+  const currentItem = await prisma.clubItem.findFirst({ where: { clubId, status: 'current' } })
+  if (!currentItem) return res.status(404).json({ error: 'No current item' })
+
+  const updated = await prisma.clubItem.update({
+    where: { id: currentItem.id },
+    data: {
+      dueDate: req.body.dueDate !== undefined ? (req.body.dueDate ? new Date(req.body.dueDate) : null) : undefined,
+      eventLabel: req.body.eventLabel !== undefined ? (req.body.eventLabel || null) : undefined,
+    },
+  })
+
+  res.json({ dueDate: updated.dueDate, eventLabel: updated.eventLabel })
 }))
 
 // POST /api/clubs/:id/rate — rate current item
@@ -302,9 +381,7 @@ router.post('/:id/rate', requireAuth, [
     create: { userId: req.userId, itemId: currentItem.id, rating, review: review || '' },
   })
 
-  await prisma.activity.create({
-    data: { userId: req.userId, type: 'rated', title: currentItem.title, rating, clubName: '' }
-  })
+  await createAndEmitActivity({ userId: req.userId, type: 'rated', title: currentItem.title, rating, clubName: '' })
   await checkAchievements(prisma, req.userId)
 
   res.json(saved)

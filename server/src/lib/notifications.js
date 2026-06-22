@@ -20,7 +20,7 @@ export async function notifyReply(prisma, { postOwnerId, actorId, clubId, postId
   })
 }
 
-export async function notifyLike(prisma, { postOwnerId, actorId, clubId, postId }) {
+export async function notifyReaction(prisma, { postOwnerId, actorId, clubId, postId }) {
   if (postOwnerId === actorId) return
 
   await prisma.notification.create({
