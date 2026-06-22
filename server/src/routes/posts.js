@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client'
 import { requireAuth } from '../middleware/auth.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { notifyNewPost, notifyReply, notifyLike } from '../lib/notifications.js'
+import { checkAchievements } from '../achievements.js'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -80,6 +81,7 @@ router.post('/club/:clubId', requireAuth, [
   })
 
   await notifyNewPost(prisma, { clubId, actorId: req.userId, postId: post.id })
+  await checkAchievements(prisma, req.userId)
 
   res.status(201).json({
     id: post.id,

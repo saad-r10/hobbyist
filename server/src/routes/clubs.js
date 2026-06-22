@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client'
 import { requireAuth } from '../middleware/auth.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { notifyClubJoin } from '../lib/notifications.js'
+import { checkAchievements } from '../achievements.js'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -194,6 +195,7 @@ router.post('/', requireAuth, [
   await prisma.activity.create({
     data: { userId: req.userId, type: 'created_club', clubName: club.name }
   })
+  await checkAchievements(prisma, req.userId)
 
   res.status(201).json(await formatClub(club, req.userId))
 }))
@@ -214,6 +216,7 @@ router.post('/:id/join', requireAuth, asyncHandler(async (req, res) => {
     data: { userId: req.userId, type: 'joined_club', clubName: club.name }
   })
   await notifyClubJoin(prisma, { clubId, actorId: req.userId })
+  await checkAchievements(prisma, req.userId)
 
   res.json({ ok: true })
 }))
@@ -302,6 +305,7 @@ router.post('/:id/rate', requireAuth, [
   await prisma.activity.create({
     data: { userId: req.userId, type: 'rated', title: currentItem.title, rating, clubName: '' }
   })
+  await checkAchievements(prisma, req.userId)
 
   res.json(saved)
 }))
