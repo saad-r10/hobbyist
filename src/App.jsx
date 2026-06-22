@@ -5,7 +5,7 @@ import {
   ArrowLeft, Flame, Plus, Check, Clock, Send, LogOut,
   Users, AlertCircle, Loader2, X, Settings, Search, TrendingUp,
   PlayCircle, CheckCircle2, Sparkles, MessageSquare, Upload,
-  ChevronLeft, ChevronRight, Download, Calendar,
+  ChevronLeft, ChevronRight, Download, Calendar, Smartphone,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext.jsx'
@@ -99,21 +99,34 @@ function Spinner({ size = 20 }) {
 function ErrorState({ message, onRetry }) {
   return (
     <div className="flex flex-col items-center gap-3 py-12 text-center">
-      <AlertCircle size={24} className="text-[#E87070]/60" />
-      <p className="text-t50 text-sm">{message || 'Something went wrong'}</p>
-      {onRetry && <button onClick={onRetry} className="text-xs text-[#E8A020] hover:opacity-80">Try again</button>}
+      <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
+        style={{ background: 'color-mix(in srgb, #E87070 10%, transparent)' }}>
+        <AlertCircle size={20} style={{ color: '#E87070' }} />
+      </div>
+      <div>
+        <p className="text-t70 text-sm font-semibold">Something went wrong</p>
+        <p className="text-t40 text-xs mt-0.5">{message || 'An unexpected error occurred'}</p>
+      </div>
+      {onRetry && (
+        <button onClick={onRetry} className="btn-ghost text-xs px-4 py-1.5">Try again</button>
+      )}
     </div>
   )
 }
 
-function EmptyState({ icon: Icon, title, sub }) {
+function EmptyState({ icon: Icon, title, sub, cta, onCta }) {
   return (
     <div className="flex flex-col items-center gap-3 py-12 text-center">
-      <Icon size={28} className="text-t15" />
-      <div>
-        <p className="text-t50 text-sm font-medium">{title}</p>
-        {sub && <p className="text-t30 text-xs mt-1">{sub}</p>}
+      <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: 'var(--surface2)' }}>
+        <Icon size={20} className="text-t30" />
       </div>
+      <div>
+        <p className="text-t70 text-sm font-semibold">{title}</p>
+        {sub && <p className="text-t35 text-xs mt-1">{sub}</p>}
+      </div>
+      {cta && onCta && (
+        <button onClick={onCta} className="btn-ghost text-xs px-4 py-1.5">{cta}</button>
+      )}
     </div>
   )
 }
@@ -745,7 +758,7 @@ function DiscussionTab({ clubId, accent }) {
 }
 
 function ChatTab({ clubId, currentUser, accent }) {
-  const { data: messages, loading, error, setData } = useApi(() => get(`/chat/${clubId}`), [clubId])
+  const { data: messages, loading, error, setData, refetch } = useApi(() => get(`/chat/${clubId}`), [clubId])
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [hoveredMsg, setHoveredMsg] = useState(null)
@@ -793,8 +806,17 @@ function ChatTab({ clubId, currentUser, accent }) {
     } catch { /* ignore */ }
   }
 
-  if (loading) return <div className="flex items-center justify-center py-12"><Spinner /></div>
-  if (error) return <ErrorState message={error} />
+  if (loading) return (
+    <div className="space-y-3 py-2">
+      {[{w:'60%',r:true},{w:'45%',r:false},{w:'70%',r:true},{w:'55%',r:false},{w:'40%',r:true}].map((s,i) => (
+        <div key={i} className={`flex items-end gap-2 ${s.r ? 'flex-row-reverse' : ''}`}>
+          <div className="w-7 h-7 skeleton-circle shrink-0" />
+          <div className="h-9 skeleton-block" style={{ width: s.w, borderRadius: 16 }} />
+        </div>
+      ))}
+    </div>
+  )
+  if (error) return <ErrorState message={error} onRetry={refetch} />
 
   const isMe = (msg) => msg.user?.id === currentUser?.id
 
@@ -1122,7 +1144,15 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
     catch { /* fire-and-forget; optimistic update already applied */ }
   }
 
-  if (loading) return <div className="py-12 flex justify-center"><Spinner /></div>
+  if (loading) return (
+    <div className="space-y-4">
+      <div className="h-8 w-28 skeleton-block" />
+      <div className="h-16 skeleton-block" />
+      <div className="h-28 skeleton-block" />
+      <div className="flex gap-2">{[...Array(4)].map((_,i) => <div key={i} className="flex-1 h-9 skeleton-block" />)}</div>
+      <div className="space-y-3">{[...Array(3)].map((_,i) => <div key={i} className="h-20 skeleton-block" />)}</div>
+    </div>
+  )
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
   const myProgress = progress ?? club?.currentItem?.myProgress ?? 0
@@ -1697,6 +1727,11 @@ function Leaderboard() {
         ))}
       </div>
 
+      {!entries.length && (
+        <EmptyState icon={Trophy} title="No entries yet"
+          sub="Rate items you've finished to earn points and appear here." />
+      )}
+
       {/* Podium */}
       {top3.length >= 3 && (
         <div className="flex items-end justify-center gap-3 mb-6">
@@ -2035,6 +2070,35 @@ function Analytics() {
   )
 }
 
+// ── Achievement Toast ──────────────────────────────────────────────────────
+
+function AchievementToast({ achievement, onDismiss }) {
+  useEffect(() => {
+    const timer = setTimeout(onDismiss, 4000)
+    return () => clearTimeout(timer)
+  }, [onDismiss])
+
+  return (
+    <div className="flex items-center gap-3 rounded-2xl px-4 py-3 border"
+      style={{
+        background: 'var(--surface)',
+        borderColor: 'var(--accent)',
+        boxShadow: 'var(--elevation-3)',
+        animation: 'fadeUp var(--duration-base) var(--ease-out) forwards',
+        minWidth: '220px',
+      }}>
+      <span style={{ fontSize: '1.5rem', lineHeight: 1 }}>{achievement.emoji}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>Achievement Unlocked!</p>
+        <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{achievement.name}</p>
+      </div>
+      <button onClick={onDismiss} className="shrink-0" style={{ color: 'var(--text-30)' }}>
+        <X size={14} />
+      </button>
+    </div>
+  )
+}
+
 // ── Profile ───────────────────────────────────────────────────────────────
 
 const SOURCE_META = {
@@ -2046,17 +2110,36 @@ const SOURCE_META = {
 
 function Profile({ onLogout }) {
   const { user, updateUser } = useAuth()
-  const { data: me, loading, error } = useApi(() => get('/users/me'))
+  const { data: me, loading, error, refetch: refetchMe } = useApi(() => get('/users/me'))
   const { data: analytics, refetch: refetchAnalytics } = useApi(() => get('/analytics'))
+  const { data: achievementsData } = useApi(() => get('/achievements'))
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ displayName: '', bio: '' })
   const [saving, setSaving] = useState(false)
   const [showImport, setShowImport] = useState(false)
+  const [toastQueue, setToastQueue] = useState([])
+  const [activeToast, setActiveToast] = useState(null)
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (me) setForm({ displayName: me.displayName, bio: me.bio || '' })
   }, [me])
+
+  useEffect(() => {
+    if (!achievementsData) return
+    const newOnes = achievementsData.achievements.filter(a => a.isNew)
+    if (newOnes.length > 0) {
+      setToastQueue(newOnes)
+      post('/achievements/seen')
+    }
+  }, [achievementsData])
+
+  useEffect(() => {
+    if (activeToast || toastQueue.length === 0) return
+    const [next, ...rest] = toastQueue
+    setActiveToast(next)
+    setToastQueue(rest)
+  }, [toastQueue, activeToast])
 
   async function saveProfile(e) {
     e.preventDefault()
@@ -2069,8 +2152,20 @@ function Profile({ onLogout }) {
     finally { setSaving(false) }
   }
 
-  if (loading) return <div className="py-12 flex justify-center"><Spinner /></div>
-  if (error) return <ErrorState message={error} />
+  if (loading) return (
+    <div className="space-y-4">
+      <div className="rounded-2xl overflow-hidden border border-t06" style={{ background: 'var(--surface)' }}>
+        <div className="h-24 skeleton-block" style={{ borderRadius: 0 }} />
+        <div className="px-4 pb-4 pt-10 space-y-2">
+          <div className="h-5 w-40 skeleton-block" />
+          <div className="h-3.5 w-56 skeleton-block" />
+        </div>
+      </div>
+      <div className="h-28 skeleton-block" />
+      <div className="h-20 skeleton-block" />
+    </div>
+  )
+  if (error) return <ErrorState message={error} onRetry={refetchMe} />
 
   const profile = me || user
   const INTEREST_MAP = { book: { label: 'Books' }, film: { label: 'Films' }, podcast: { label: 'Podcasts' }, game: { label: 'Games' } }
@@ -2143,6 +2238,36 @@ function Profile({ onLogout }) {
           ))}
         </div>
       </div>
+
+      {/* Achievements */}
+      {achievementsData?.achievements?.length > 0 && (
+        <div className="rounded-2xl border border-t06 overflow-hidden" style={{ background: 'var(--surface)' }}>
+          <div className="px-4 pt-4 pb-3">
+            <h3 className="text-fs-sm font-semibold text-t80">Achievements</h3>
+            <p className="text-fs-xs text-t40 mt-0.5">
+              {achievementsData.achievements.filter(a => a.earned).length} / {achievementsData.achievements.length} earned
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 px-4 pb-4">
+            {achievementsData.achievements.map(a => (
+              <div key={a.id}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all"
+                style={{
+                  background: a.earned ? 'var(--accent-12)' : 'var(--surface2)',
+                  borderColor: a.earned ? 'var(--accent-20)' : 'transparent',
+                  opacity: a.earned ? 1 : 0.45,
+                }}>
+                <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>{a.emoji}</span>
+                <div className="min-w-0">
+                  <p className="text-fs-xs font-semibold truncate" style={{ color: a.earned ? 'var(--text)' : 'var(--text-50)' }}>{a.name}</p>
+                  <p className="text-[10px] leading-tight mt-0.5 truncate" style={{ color: 'var(--text-40)' }}>{a.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
 
       {/* Import history */}
       <div className="rounded-2xl border border-t06 overflow-hidden" style={{ background: 'var(--surface)' }}>
@@ -2233,6 +2358,13 @@ function Profile({ onLogout }) {
           onImported={() => { refetchAnalytics() }}
         />
       )}
+
+      {/* Achievement unlock toast */}
+      {activeToast && (
+        <div className="fixed bottom-24 lg:bottom-8 right-4 z-50">
+          <AchievementToast achievement={activeToast} onDismiss={() => setActiveToast(null)} />
+        </div>
+      )}
     </div>
   )
 }
@@ -2268,6 +2400,63 @@ function DemoBanner() {
   )
 }
 
+function useInstallPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+  const dismissed = useRef(false)
+
+  useEffect(() => {
+    try { dismissed.current = localStorage.getItem('hobbyist-pwa-dismissed') === 'true' } catch { /* ignore */ }
+    const handler = (e) => {
+      if (dismissed.current) return
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  function install() {
+    if (!deferredPrompt) return
+    deferredPrompt.prompt()
+    deferredPrompt.userChoice.finally(() => setDeferredPrompt(null))
+  }
+
+  function dismiss() {
+    try { localStorage.setItem('hobbyist-pwa-dismissed', 'true') } catch { /* ignore */ }
+    dismissed.current = true
+    setDeferredPrompt(null)
+  }
+
+  return { canInstall: !!deferredPrompt, install, dismiss }
+}
+
+function InstallBanner({ canInstall, onInstall, onDismiss }) {
+  if (!canInstall) return null
+  return (
+    <div className="fixed bottom-20 left-4 right-4 lg:left-auto lg:right-6 lg:bottom-6 lg:w-80 z-50
+      flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border"
+      style={{ background: 'var(--surface)', borderColor: 'var(--accent)', color: 'var(--text)' }}>
+      <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
+        style={{ background: 'var(--accent)' }}>
+        <Smartphone size={18} color="#0F1923" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold leading-tight">Install Hobbyist</p>
+        <p className="text-xs leading-tight mt-0.5" style={{ color: 'var(--text-dim)' }}>Add to your home screen</p>
+      </div>
+      <button onClick={onInstall}
+        className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg"
+        style={{ background: 'var(--accent)', color: '#0F1923' }}>
+        Install
+      </button>
+      <button onClick={onDismiss} className="shrink-0 opacity-50 hover:opacity-100"
+        style={{ color: 'var(--text)' }}>
+        <X size={16} />
+      </button>
+    </div>
+  )
+}
+
 export default function App() {
   const { user, logout } = useAuth()
   const { isDark, toggle: toggleTheme } = useTheme()
@@ -2276,6 +2465,7 @@ export default function App() {
   const [selectedClub, setSelectedClub] = useState(null)
   const [showSearch, setShowSearch] = useState(false)
   const [pendingSubTab, setPendingSubTab] = useState(null)
+  const { canInstall, install, dismiss: dismissInstall } = useInstallPrompt()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return localStorage.getItem('hobbyist-sidebar-collapsed') === 'true' } catch { return false }
   })
@@ -2370,6 +2560,8 @@ export default function App() {
           onNavigateProfile={() => { setShowSearch(false); handleTabChange('profile') }}
         />
       )}
+
+      <InstallBanner canInstall={canInstall} onInstall={install} onDismiss={dismissInstall} />
     </div>
   )
 }
