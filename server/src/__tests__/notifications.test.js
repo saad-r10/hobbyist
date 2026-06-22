@@ -111,14 +111,14 @@ describe('reply and like notifications', () => {
   it('notifies the post owner on like, not on unlike or self-like', async () => {
     const { owner, other, postId } = await setupPost()
 
-    await auth(request(app).post(`/api/posts/${postId}/like`), other.accessToken)
+    await auth(request(app).post(`/api/posts/${postId}/react`), other.accessToken).send({ emoji: '👍' })
     let ownerInbox = await auth(request(app).get('/api/notifications'), owner.accessToken)
     expect(ownerInbox.body.notifications.filter(n => n.type === 'like')).toHaveLength(1)
 
     // Unlike, then like again — should not create a second notification entry beyond this point's check
-    await auth(request(app).post(`/api/posts/${postId}/like`), other.accessToken)
+    await auth(request(app).post(`/api/posts/${postId}/react`), other.accessToken).send({ emoji: '👍' })
 
-    await auth(request(app).post(`/api/posts/${postId}/like`), owner.accessToken)
+    await auth(request(app).post(`/api/posts/${postId}/react`), owner.accessToken).send({ emoji: '👍' })
     ownerInbox = await auth(request(app).get('/api/notifications'), owner.accessToken)
     expect(ownerInbox.body.notifications.filter(n => n.type === 'like')).toHaveLength(1)
   })
