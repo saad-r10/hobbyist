@@ -1670,6 +1670,35 @@ function Analytics() {
   )
 }
 
+// ── Achievement Toast ──────────────────────────────────────────────────────
+
+function AchievementToast({ achievement, onDismiss }) {
+  useEffect(() => {
+    const timer = setTimeout(onDismiss, 4000)
+    return () => clearTimeout(timer)
+  }, [onDismiss])
+
+  return (
+    <div className="flex items-center gap-3 rounded-2xl px-4 py-3 border"
+      style={{
+        background: 'var(--surface)',
+        borderColor: 'var(--accent)',
+        boxShadow: 'var(--elevation-3)',
+        animation: 'fadeUp var(--duration-base) var(--ease-out) forwards',
+        minWidth: '220px',
+      }}>
+      <span style={{ fontSize: '1.5rem', lineHeight: 1 }}>{achievement.emoji}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>Achievement Unlocked!</p>
+        <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{achievement.name}</p>
+      </div>
+      <button onClick={onDismiss} className="shrink-0" style={{ color: 'var(--text-30)' }}>
+        <X size={14} />
+      </button>
+    </div>
+  )
+}
+
 // ── Profile ───────────────────────────────────────────────────────────────
 
 const SOURCE_META = {
@@ -1683,15 +1712,34 @@ function Profile({ onLogout }) {
   const { user, updateUser } = useAuth()
   const { data: me, loading, error } = useApi(() => get('/users/me'))
   const { data: analytics, refetch: refetchAnalytics } = useApi(() => get('/analytics'))
+  const { data: achievementsData } = useApi(() => get('/achievements'))
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ displayName: '', bio: '' })
   const [saving, setSaving] = useState(false)
   const [showImport, setShowImport] = useState(false)
+  const [toastQueue, setToastQueue] = useState([])
+  const [activeToast, setActiveToast] = useState(null)
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (me) setForm({ displayName: me.displayName, bio: me.bio || '' })
   }, [me])
+
+  useEffect(() => {
+    if (!achievementsData) return
+    const newOnes = achievementsData.achievements.filter(a => a.isNew)
+    if (newOnes.length > 0) {
+      setToastQueue(newOnes)
+      post('/achievements/seen')
+    }
+  }, [achievementsData])
+
+  useEffect(() => {
+    if (activeToast || toastQueue.length === 0) return
+    const [next, ...rest] = toastQueue
+    setActiveToast(next)
+    setToastQueue(rest)
+  }, [toastQueue, activeToast])
 
   async function saveProfile(e) {
     e.preventDefault()
@@ -1778,6 +1826,35 @@ function Profile({ onLogout }) {
           ))}
         </div>
       </div>
+
+      {/* Achievements */}
+      {achievementsData?.achievements?.length > 0 && (
+        <div className="rounded-2xl border border-t06 overflow-hidden" style={{ background: 'var(--surface)' }}>
+          <div className="px-4 pt-4 pb-3">
+            <h3 className="text-fs-sm font-semibold text-t80">Achievements</h3>
+            <p className="text-fs-xs text-t40 mt-0.5">
+              {achievementsData.achievements.filter(a => a.earned).length} / {achievementsData.achievements.length} earned
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 px-4 pb-4">
+            {achievementsData.achievements.map(a => (
+              <div key={a.id}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all"
+                style={{
+                  background: a.earned ? 'var(--accent-12)' : 'var(--surface2)',
+                  borderColor: a.earned ? 'var(--accent-20)' : 'transparent',
+                  opacity: a.earned ? 1 : 0.45,
+                }}>
+                <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>{a.emoji}</span>
+                <div className="min-w-0">
+                  <p className="text-fs-xs font-semibold truncate" style={{ color: a.earned ? 'var(--text)' : 'var(--text-50)' }}>{a.name}</p>
+                  <p className="text-[10px] leading-tight mt-0.5 truncate" style={{ color: 'var(--text-40)' }}>{a.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Import history */}
       <div className="rounded-2xl border border-t06 overflow-hidden" style={{ background: 'var(--surface)' }}>
@@ -1867,6 +1944,13 @@ function Profile({ onLogout }) {
           onClose={() => setShowImport(false)}
           onImported={() => { refetchAnalytics() }}
         />
+      )}
+
+      {/* Achievement unlock toast */}
+      {activeToast && (
+        <div className="fixed bottom-24 lg:bottom-8 right-4 z-50">
+          <AchievementToast achievement={activeToast} onDismiss={() => setActiveToast(null)} />
+        </div>
       )}
     </div>
   )

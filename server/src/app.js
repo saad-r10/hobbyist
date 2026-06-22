@@ -19,6 +19,7 @@ import importRoutes from './routes/import.js'
 import searchRoutes from './routes/search.js'
 import notificationRoutes from './routes/notifications.js'
 import coverArtRoutes from './routes/coverArt.js'
+import achievementRoutes from './routes/achievements.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
@@ -72,6 +73,7 @@ app.use('/api/import', importRoutes)
 app.use('/api/search', searchRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/cover-art', coverArtRoutes)
+app.use('/api/achievements', achievementRoutes)
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, env: process.env.NODE_ENV }))
 

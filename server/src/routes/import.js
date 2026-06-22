@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator'
 import { PrismaClient } from '@prisma/client'
 import { requireAuth } from '../middleware/auth.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
+import { checkAchievements } from '../achievements.js'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -53,7 +54,6 @@ router.post('/', requireAuth, [
     }
   }
 
-  // Log as an activity
   await prisma.activity.create({
     data: {
       userId,
@@ -62,6 +62,7 @@ router.post('/', requireAuth, [
       extra: JSON.stringify({ source, imported, skipped }),
     }
   })
+  await checkAchievements(prisma, userId)
 
   res.json({ imported, skipped, total: items.length })
 }))
