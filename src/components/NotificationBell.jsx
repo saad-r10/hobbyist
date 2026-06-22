@@ -64,11 +64,14 @@ export default function NotificationBell({ onNavigate }) {
   return (
     <div className="relative">
       <button onClick={() => setOpen(o => !o)}
-        className="relative rounded-lg p-1.5 transition-colors"
-        style={{ background: 'var(--border)', color: 'var(--text-dim)' }} title="Notifications">
-        <Bell size={16} />
+        aria-label={unreadCount > 0 ? `Notifications — ${unreadCount} unread` : 'Notifications'}
+        aria-expanded={open}
+        aria-haspopup="true"
+        className="relative rounded-lg p-1.5 transition-colors focus-ring"
+        style={{ background: 'var(--border)', color: 'var(--text-dim)' }}>
+        <Bell size={16} aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-[10px] font-semibold leading-none min-w-[16px] h-4 px-1"
+          <span aria-hidden="true" className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-[10px] font-semibold leading-none min-w-[16px] h-4 px-1"
             style={{ background: 'var(--accent)', color: 'var(--bg)' }}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
@@ -83,7 +86,7 @@ export default function NotificationBell({ onNavigate }) {
             <div className="flex items-center justify-between px-3 py-2 border-b border-t06">
               <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Notifications</span>
               {unreadCount > 0 && (
-                <button onClick={markAllRead} className="text-xs" style={{ color: 'var(--accent)' }}>
+                <button onClick={markAllRead} className="text-xs focus-ring rounded" style={{ color: 'var(--accent)' }}>
                   Mark all read
                 </button>
               )}
@@ -95,7 +98,7 @@ export default function NotificationBell({ onNavigate }) {
                 const Icon = TYPE_ICONS[n.type] || Bell
                 return (
                   <button key={n.id} onClick={() => handleSelect(n)}
-                    className="w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors hover:opacity-90"
+                    className="w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors hover:opacity-90 focus-ring"
                     style={{ background: n.read ? 'transparent' : 'var(--accent-12)' }}>
                     <div className="rounded-full p-1.5 mt-0.5 shrink-0" style={{ background: 'var(--border-08)', color: 'var(--text-dim)' }}>
                       <Icon size={13} />

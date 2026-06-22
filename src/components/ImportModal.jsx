@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { X, Upload, BookOpen, Film, AlertCircle, Check, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import { post } from '../api/client.js'
 import { parseLetterboxd, parseGoodreads } from '../utils/csvParsers.js'
@@ -47,6 +47,12 @@ export default function ImportModal({ onClose, onImported }) {
 
   const config = platform ? PLATFORMS[platform] : null
 
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   function handleFile(e) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -93,15 +99,15 @@ export default function ImportModal({ onClose, onImported }) {
 
   return (
     <div className="modal-overlay flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-      <div className="modal-panel w-full max-w-lg" onClick={e => e.stopPropagation()}>
+      <div className="modal-panel w-full max-w-lg" role="dialog" aria-modal="true" aria-labelledby="import-modal-title" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-t08">
           <div>
-            <h3 className="font-display text-lg font-semibold">Import your history</h3>
+            <h3 id="import-modal-title" className="font-display text-lg font-semibold">Import your history</h3>
             <p className="text-xs text-t40 mt-0.5">Bring in ratings from other platforms</p>
           </div>
-          <button onClick={onClose} className="modal-close"><X size={18} /></button>
+          <button onClick={onClose} aria-label="Close" className="modal-close"><X size={18} /></button>
         </div>
 
         <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto no-scrollbar">

@@ -91,22 +91,24 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
     <div className="modal-overlay flex items-start justify-center pt-16 sm:pt-24 px-4"
       style={{ backdropFilter: 'blur(4px)' }}
       onClick={onClose}>
-      <div className="modal-panel w-full max-w-lg"
+      <div className="modal-panel w-full max-w-lg" role="dialog" aria-modal="true" aria-label="Search"
         onClick={e => e.stopPropagation()}>
 
         {/* Input */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-t08">
-          <Search size={18} className="text-t40 shrink-0" />
+          <Search size={18} className="text-t40 shrink-0" aria-hidden="true" />
           <input
             ref={inputRef}
             value={query}
             onChange={handleInput}
             placeholder="Search clubs, people, items…"
+            aria-label="Search clubs, people, items"
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-t30"
             style={{ color: 'var(--text)' }}
           />
           {query && (
             <button onClick={() => { setQuery(''); setResults(null); inputRef.current?.focus() }}
+              aria-label="Clear search"
               className="modal-close -mr-1">
               <X size={16} />
             </button>
@@ -114,7 +116,7 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
         </div>
 
         {/* Results */}
-        <div className="overflow-y-auto no-scrollbar" style={{ maxHeight: '60vh' }}>
+        <div className="overflow-y-auto no-scrollbar" aria-live="polite" aria-atomic="false" style={{ maxHeight: '60vh' }}>
           {!query && (
             <div className="py-10 text-center">
               <Search size={24} className="mx-auto mb-2 text-t15" />
@@ -139,7 +141,7 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
             <Section label="Clubs">
               {results.clubs.map(club => (
                 <button key={club.id} onClick={() => onNavigateClub(club.id)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-s04 transition-colors">
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-s04 transition-colors focus-ring">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
                     style={{ background: `${club.accentColor}20` }}>
                     {club.emoji}
@@ -157,7 +159,7 @@ export default function SearchModal({ onClose, onNavigateClub, onNavigateProfile
             <Section label="People">
               {results.users.map(user => (
                 <button key={user.id} onClick={onNavigateProfile}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-s04 transition-colors">
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-s04 transition-colors focus-ring">
                   <Avatar user={user} size={30} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-t90 truncate">{user.displayName}</p>

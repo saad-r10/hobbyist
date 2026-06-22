@@ -75,8 +75,8 @@ export default function Register() {
         </div>
 
         {serverError && (
-          <div className="flex items-start gap-2 rounded-xl border border-danger-40 bg-danger-10 p-3 text-sm text-danger mb-5">
-            <AlertCircle size={15} className="mt-0.5 shrink-0" />
+          <div role="alert" className="flex items-start gap-2 rounded-xl border border-danger-40 bg-danger-10 p-3 text-sm text-danger mb-5">
+            <AlertCircle size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
             {serverError}
           </div>
         )}
@@ -109,7 +109,8 @@ export default function Register() {
                 placeholder="At least 8 characters" autoComplete="new-password"
                 className={`input-field pr-10 ${errors.password ? 'border-[#E87070]/60' : ''}`} />
               <button type="button" onClick={() => setShowPw(s => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors text-t40 hover:text-t70">
+                aria-label={showPw ? 'Hide password' : 'Show password'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors text-t40 hover:text-t70 focus-ring rounded">
                 {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
