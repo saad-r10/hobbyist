@@ -1,22 +1,29 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   BookOpen, Film, Mic, Gamepad2, Home, Compass, Trophy,
-  BarChart2, User, Heart, MessageCircle, Star,
+  BarChart2, User, MessageCircle, Star,
   ArrowLeft, Flame, Plus, Check, Clock, Send, LogOut,
   Users, AlertCircle, Loader2, X, Settings, Search, TrendingUp,
   PlayCircle, CheckCircle2, Sparkles, MessageSquare, Upload,
-  ChevronLeft, ChevronRight, Download,
+  ChevronLeft, ChevronRight, Download, Calendar,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext.jsx'
 import { useTheme } from './contexts/ThemeContext.jsx'
-import { get, post, put } from './api/client.js'
+import { get, post, put, patch } from './api/client.js'
 import ImportModal from './components/ImportModal.jsx'
 import NotificationBell from './components/NotificationBell.jsx'
 import SearchModal from './components/SearchModal.jsx'
 import Sidebar from './components/Sidebar.jsx'
+import { useSocket } from './hooks/useSocket.js'
 
 // ── Utility components ──────────────────────────────────────────────────
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null
+  const diff = new Date(dateStr) - new Date()
+  return Math.ceil(diff / (1000 * 60 * 60 * 24))
+}
 
 function Avatar({ user, size = 32 }) {
   if (!user) return <div className="rounded-full bg-s10" style={{ width: size, height: size }} />
@@ -170,7 +177,7 @@ function ActivityBadge({ type, accent, size = 22 }) {
   )
 }
 
-const QUICK_REACTIONS = ['👍', '❤️', '🎉', '👏']
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '🎉', '😮']
 
 function InlineReactionBar({ item }) {
   const [active, setActive] = useState(null)
@@ -205,6 +212,86 @@ function InlineReactionBar({ item }) {
         <MessageCircle size={13} />
         {item.commentCount > 0 ? item.commentCount : ''}
       </button>
+    </div>
+  )
+}
+
+function EmojiPickerPopover({ onPick, onClose, above = true }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) onClose() }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  return (
+    <div ref={ref}
+      className="absolute left-0 z-50 flex gap-0.5 p-1 rounded-xl shadow-xl border border-t12"
+      style={{
+        background: 'var(--surface)',
+        ...(above ? { bottom: '100%', marginBottom: 4 } : { top: '100%', marginTop: 4 }),
+      }}>
+      {QUICK_REACTIONS.map(emoji => (
+        <button key={emoji} onClick={() => onPick(emoji)}
+          className="w-8 h-8 flex items-center justify-center text-base rounded-lg transition-transform hover:scale-125 active:scale-95"
+          style={{ background: 'transparent' }}
+          title={emoji}>
+          {emoji}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function applyReactionToggle(reactions, emoji, reacted) {
+  const exists = reactions.find(r => r.emoji === emoji)
+  if (reacted) {
+    if (exists) return reactions.map(r => r.emoji === emoji ? { ...r, count: r.count + 1, reactedByMe: true } : r)
+    return [...reactions, { emoji, count: 1, reactedByMe: true, users: ['You'] }]
+  } else {
+    return reactions
+      .map(r => r.emoji === emoji ? { ...r, count: r.count - 1, reactedByMe: false } : r)
+      .filter(r => r.count > 0)
+  }
+}
+
+function ReactionBar({ reactions = [], onReact, compact = false }) {
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  return (
+    <div className="flex items-center gap-1 flex-wrap relative">
+      {reactions.map(r => (
+        <button key={r.emoji} onClick={() => onReact(r.emoji)}
+          title={r.users?.join(', ')}
+          className="flex items-center gap-0.5 rounded-full text-xs transition-all hover:scale-110 active:scale-95"
+          style={{
+            padding: compact ? '1px 6px' : '2px 8px',
+            background: r.reactedByMe ? 'var(--accent-15)' : 'var(--surface2)',
+            border: `1px solid ${r.reactedByMe ? 'var(--accent)' : 'transparent'}`,
+            opacity: r.reactedByMe ? 1 : 0.75,
+          }}>
+          <span>{r.emoji}</span>
+          <span className="ml-0.5 text-t60">{r.count}</span>
+        </button>
+      ))}
+      <div className="relative">
+        <button onClick={() => setPickerOpen(p => !p)}
+          className="flex items-center justify-center rounded-full text-t30 hover:text-t60 transition-all"
+          style={{
+            width: compact ? 20 : 24,
+            height: compact ? 20 : 24,
+            background: pickerOpen ? 'var(--surface2)' : 'transparent',
+            fontSize: compact ? 11 : 13,
+          }}>
+          +
+        </button>
+        {pickerOpen && (
+          <EmojiPickerPopover
+            onPick={(emoji) => { onReact(emoji); setPickerOpen(false) }}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
+      </div>
     </div>
   )
 }
@@ -327,7 +414,17 @@ function groupFeedItems(data) {
 }
 
 function GlobalFeed() {
-  const { data, loading, error, refetch } = useApi(() => get('/feed'))
+  const { data, loading, error, refetch, setData } = useApi(() => get('/feed'))
+
+  useSocket({
+    'feed:activity': useCallback((activity) => {
+      setData(prev => {
+        if (!prev) return [activity]
+        if (prev.some(a => a.id === activity.id)) return prev
+        return [activity, ...prev]
+      })
+    }, [setData]),
+  })
 
   if (loading) return <div className="space-y-3">{[...Array(5)].map((_, i) => <SkeletonCard key={i} />)}</div>
   if (error) return <ErrorState message={error} onRetry={refetch} />
@@ -514,14 +611,24 @@ function DiscussionTab({ clubId, accent }) {
     finally { setPosting(false) }
   }
 
-  async function toggleLike(postId) {
+  async function toggleReaction(postId, targetType, targetId, emoji) {
+    const url = targetType === 'post'
+      ? `/posts/${targetId}/react`
+      : `/posts/${postId}/replies/${targetId}/react`
     try {
-      const res = await post(`/posts/${postId}/like`, {})
-      setData(prev => prev.map(p => p.id === postId
-        ? { ...p, likedByMe: res.liked, likeCount: p.likeCount + (res.liked ? 1 : -1) }
-        : p
-      ))
-    } catch { /* optimistic like already applied */ }
+      const res = await post(url, { emoji })
+      setData(prev => prev.map(p => {
+        if (targetType === 'post' && p.id === targetId) {
+          return { ...p, reactions: applyReactionToggle(p.reactions, emoji, res.reacted) }
+        }
+        if (targetType === 'reply' && p.id === postId) {
+          return { ...p, replies: p.replies.map(r =>
+            r.id === targetId ? { ...r, reactions: applyReactionToggle(r.reactions, emoji, res.reacted) } : r
+          )}
+        }
+        return p
+      }))
+    } catch { /* ignore */ }
   }
 
   async function submitReply(postId) {
@@ -579,12 +686,21 @@ function DiscussionTab({ clubId, accent }) {
           <p className="text-sm text-t70 leading-relaxed mb-3">{p.body}</p>
 
           {expanded[p.id] && p.replies.map((r, i) => (
-            <div key={i} className="flex gap-2.5 mb-2 pl-4 border-l-2" style={{ borderColor: `${accent}30` }}>
+            <div key={i} className="flex gap-2.5 mb-2 pl-4 border-l-2" style={{ borderColor: withAlpha(accent, 19) }}>
               <Avatar user={r.user} size={24} />
-              <div>
+              <div className="flex-1 min-w-0">
                 <span className="font-medium text-xs" style={{ color: accent }}>{r.user?.displayName}</span>
                 <span className="text-xs text-t30 ml-1.5">{r.time}</span>
                 <p className="text-sm text-t70 mt-0.5">{r.text}</p>
+                {r.reactions !== undefined && (
+                  <div className="mt-1.5">
+                    <ReactionBar
+                      reactions={r.reactions || []}
+                      onReact={(emoji) => toggleReaction(p.id, 'reply', r.id, emoji)}
+                      compact
+                    />
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -598,27 +714,25 @@ function DiscussionTab({ clubId, accent }) {
             </div>
           )}
 
-          <div className="flex items-center gap-4 pt-3 border-t border-t06 mt-2">
-            <button onClick={() => toggleLike(p.id)}
-              className="flex items-center gap-1.5 text-xs transition-colors"
-              style={{ color: p.likedByMe ? '#E87070' : 'var(--text-35)' }}>
-              <Heart size={12} fill={p.likedByMe ? '#E87070' : 'none'} />
-              {p.likeCount > 0 && p.likeCount}
-            </button>
+          <div className="flex items-center gap-3 pt-3 border-t border-t06 mt-2">
+            <ReactionBar
+              reactions={p.reactions || []}
+              onReact={(emoji) => toggleReaction(p.id, 'post', p.id, emoji)}
+            />
             <button onClick={() => setExpanded(e => ({ ...e, [p.id]: !e[p.id] }))}
-              className="flex items-center gap-1.5 text-xs text-t40 hover:text-t70 transition-colors">
+              className="flex items-center gap-1.5 text-xs text-t40 hover:text-t70 transition-colors ml-auto">
               <MessageCircle size={12} />
               {p.replyCount > 0 ? `${p.replyCount} ${p.replyCount === 1 ? 'reply' : 'replies'}` : 'Reply'}
             </button>
             {p.replyCount > 0 && (
               <button onClick={() => { setExpanded(e => ({ ...e, [p.id]: !e[p.id] })); setReplyingTo(p.id) }}
-                className="text-xs text-t30 hover:text-t60 ml-auto transition-colors">
-                {expanded[p.id] ? 'Hide' : 'Show replies'}
+                className="text-xs text-t30 hover:text-t60 transition-colors">
+                {expanded[p.id] ? 'Hide' : 'Show'}
               </button>
             )}
             {!expanded[p.id] && (
               <button onClick={() => setReplyingTo(r => r === p.id ? null : p.id)}
-                className="text-xs ml-auto transition-colors"
+                className="text-xs transition-colors"
                 style={{ color: replyingTo === p.id ? accent : 'var(--text-30)' }}>
                 Reply
               </button>
@@ -634,7 +748,19 @@ function ChatTab({ clubId, currentUser, accent }) {
   const { data: messages, loading, error, setData } = useApi(() => get(`/chat/${clubId}`), [clubId])
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [hoveredMsg, setHoveredMsg] = useState(null)
   const bottomRef = useRef(null)
+
+  useSocket({
+    'chat:message': useCallback((msg) => {
+      setData(prev => {
+        if (!prev) return [msg]
+        // Ignore if already present (dedup with optimistic or prior socket delivery)
+        if (prev.some(m => m.id === msg.id)) return prev
+        return [...prev, msg]
+      })
+    }, [setData]),
+  })
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -644,7 +770,7 @@ function ChatTab({ clubId, currentUser, accent }) {
     e.preventDefault()
     if (!text.trim() || sending) return
     setSending(true)
-    const optimistic = { id: Date.now(), text: text.trim(), time: 'just now', user: currentUser, createdAt: new Date().toISOString() }
+    const optimistic = { id: Date.now(), text: text.trim(), time: 'just now', user: currentUser, createdAt: new Date().toISOString(), reactions: [] }
     setData(prev => [...(prev || []), optimistic])
     setText('')
     try {
@@ -657,30 +783,101 @@ function ChatTab({ clubId, currentUser, accent }) {
     } finally { setSending(false) }
   }
 
+  async function toggleChatReaction(msgId, emoji) {
+    try {
+      const res = await post(`/chat/messages/${msgId}/react`, { emoji })
+      setData(prev => prev.map(m => m.id === msgId
+        ? { ...m, reactions: applyReactionToggle(m.reactions || [], emoji, res.reacted) }
+        : m
+      ))
+    } catch { /* ignore */ }
+  }
+
   if (loading) return <div className="flex items-center justify-center py-12"><Spinner /></div>
   if (error) return <ErrorState message={error} />
 
   const isMe = (msg) => msg.user?.id === currentUser?.id
 
+  // Group consecutive messages from the same sender
+  const msgGroups = []
+  messages?.forEach(msg => {
+    const last = msgGroups[msgGroups.length - 1]
+    if (last && last[0].user?.id === msg.user?.id) last.push(msg)
+    else msgGroups.push([msg])
+  })
+
   return (
     <div className="flex flex-col h-[calc(100vh-280px)] sm:h-[520px]">
-      <div className="flex-1 overflow-y-auto space-y-3 pr-1 no-scrollbar">
+      <div className="flex-1 overflow-y-auto no-scrollbar py-1" style={{ paddingRight: 2 }}>
         {!messages?.length && <EmptyState icon={MessageCircle} title="No messages yet" sub="Say hello to your clubmates!" />}
-        {messages?.map(msg => (
-          <div key={msg.id} className={`flex items-end gap-2 ${isMe(msg) ? 'flex-row-reverse' : ''}`}>
-            {!isMe(msg) && <Avatar user={msg.user} size={28} />}
-            <div className="max-w-[75%]">
-              {!isMe(msg) && <p className="text-xs mb-1 ml-1" style={{ color: msg.user?.avatarColor || accent }}>{msg.user?.displayName}</p>}
-              <div className="rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed"
-                style={isMe(msg)
-                  ? { background: accent, color: 'var(--bg)' }
-                  : { background: 'var(--surface-07)', color: 'var(--text)' }}>
-                {msg.text}
+        <div className="space-y-2.5">
+          {msgGroups.map((group, gi) => {
+            const mine = isMe(group[0])
+            return (
+              <div key={gi} className={`flex items-end gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
+                <div className="w-7 shrink-0 self-end mb-1">
+                  {!mine && <Avatar user={group[0].user} size={28} />}
+                </div>
+                <div className={`flex flex-col gap-0.5 max-w-[75%] ${mine ? 'items-end' : 'items-start'}`}>
+                  {!mine && (
+                    <p className="text-xs mb-0.5 ml-1 font-medium"
+                      style={{ color: group[0].user?.avatarColor || accent }}>
+                      {group[0].user?.displayName}
+                    </p>
+                  )}
+                  {group.map((msg, mi) => {
+                    const first = mi === 0
+                    const last = mi === group.length - 1
+                    const r = 18
+                    const s = 5
+                    const borderRadius = mine
+                      ? `${r}px ${first ? r : s}px ${last ? r : s}px ${r}px`
+                      : `${first ? r : s}px ${r}px ${r}px ${last ? r : s}px`
+                    return (
+                      <div key={msg.id}
+                        onMouseEnter={() => setHoveredMsg(msg.id)}
+                        onMouseLeave={() => setHoveredMsg(null)}>
+                        <div className="flex items-center gap-1.5" style={{ flexDirection: mine ? 'row-reverse' : 'row' }}>
+                          <div
+                            className="px-3.5 py-2 text-sm leading-relaxed"
+                            style={{
+                              background: mine ? accent : 'var(--surface2)',
+                              color: mine ? 'var(--accent-text)' : 'var(--text)',
+                              borderRadius,
+                              border: mine ? 'none' : '1px solid var(--border-06)',
+                            }}>
+                            {msg.text}
+                          </div>
+                          {hoveredMsg === msg.id && (
+                            <div className="relative shrink-0">
+                              <EmojiPickerPopover
+                                onPick={(emoji) => toggleChatReaction(msg.id, emoji)}
+                                onClose={() => setHoveredMsg(null)}
+                                above
+                              />
+                            </div>
+                          )}
+                        </div>
+                        {msg.reactions?.length > 0 && (
+                          <div className={`mt-1 ${mine ? 'mr-1' : 'ml-1'}`}>
+                            <ReactionBar
+                              reactions={msg.reactions}
+                              onReact={(emoji) => toggleChatReaction(msg.id, emoji)}
+                              compact
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                  <p className={`text-[10px] mt-0.5 text-t25 ${mine ? 'mr-1' : 'ml-1'}`}>
+                    {group[group.length - 1].time}
+                  </p>
+                </div>
               </div>
-              <p className={`text-xs mt-1 text-t25 ${isMe(msg) ? 'text-right mr-1' : 'ml-1'}`}>{msg.time}</p>
-            </div>
-          </div>
-        ))}
+            )
+          })}
+        </div>
         <div ref={bottomRef} />
       </div>
       <form onSubmit={sendMessage} className="flex gap-2 mt-3 pt-3 border-t border-t06">
@@ -688,7 +885,7 @@ function ChatTab({ clubId, currentUser, accent }) {
           className="input-field flex-1 text-sm py-2.5" />
         <button type="submit" disabled={!text.trim() || sending}
           className="rounded-xl px-4 py-2.5 transition-opacity disabled:opacity-40"
-          style={{ background: accent, color: 'var(--bg)' }}>
+          style={{ background: accent, color: 'var(--accent-text)' }}>
           <Send size={15} />
         </button>
       </form>
@@ -745,8 +942,53 @@ function PastItemsTab({ items }) {
   )
 }
 
+function EventEditor({ clubId, initial, accent, onSaved, onCancel }) {
+  const [dueDate, setDueDate] = useState(initial.dueDate ? new Date(initial.dueDate).toISOString().split('T')[0] : '')
+  const [eventLabel, setEventLabel] = useState(initial.eventLabel || '')
+  const [saving, setSaving] = useState(false)
+
+  async function save() {
+    setSaving(true)
+    try {
+      await patch(`/clubs/${clubId}/items/current`, {
+        dueDate: dueDate || null,
+        eventLabel: eventLabel || null,
+      })
+      onSaved()
+    } catch (err) { alert(err.message) }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div className="mt-2 p-2 rounded-lg border border-t08" style={{ background: 'var(--surface2)' }}>
+      <div className="flex gap-2 mb-2">
+        <input value={eventLabel} onChange={e => setEventLabel(e.target.value)}
+          placeholder="Label (e.g. Finish by)" className="input-field flex-1 text-xs py-1" maxLength={100} />
+        <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
+          className="input-field text-xs py-1 w-32" />
+      </div>
+      <div className="flex gap-2">
+        <button onClick={save} disabled={saving}
+          className="flex-1 text-xs py-1 rounded-lg font-medium"
+          style={{ background: accent, color: 'var(--bg)' }}>
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+        {initial.dueDate && (
+          <button onClick={async () => {
+            setSaving(true)
+            try { await patch(`/clubs/${clubId}/items/current`, { dueDate: null, eventLabel: null }); onSaved() }
+            catch (err) { alert(err.message) }
+            finally { setSaving(false) }
+          }} className="text-xs py-1 px-2 rounded-lg text-t40 hover:text-t70">Clear</button>
+        )}
+        <button onClick={onCancel} className="text-xs py-1 px-2 rounded-lg text-t40 hover:text-t70">Cancel</button>
+      </div>
+    </div>
+  )
+}
+
 function AddItemModal({ clubId, clubType, onClose, onAdded }) {
-  const [form, setForm] = useState({ title: '', subtitle: '', description: '' })
+  const [form, setForm] = useState({ title: '', subtitle: '', description: '', dueDate: '', eventLabel: '' })
   const [loading, setLoading] = useState(false)
   const [coverUrl, setCoverUrl] = useState(null)
   const [coverLoading, setCoverLoading] = useState(false)
@@ -772,7 +1014,10 @@ function AddItemModal({ clubId, clubType, onClose, onAdded }) {
     e.preventDefault()
     setLoading(true)
     try {
-      const item = await post(`/clubs/${clubId}/items`, { ...form, type: clubType, coverUrl })
+      const payload = { ...form, type: clubType, coverUrl }
+      if (!payload.dueDate) delete payload.dueDate
+      if (!payload.eventLabel) delete payload.eventLabel
+      const item = await post(`/clubs/${clubId}/items`, payload)
       onAdded(item)
       onClose()
     } catch (err) { alert(err.message) }
@@ -798,6 +1043,14 @@ function AddItemModal({ clubId, clubType, onClose, onAdded }) {
             <div className="flex-1 space-y-3">
               <input value={form.title} onChange={set('title')} required placeholder="Title" className="input-field" />
               <input value={form.subtitle} onChange={set('subtitle')} placeholder="Author / Director / Studio" className="input-field" />
+            </div>
+          </div>
+          <textarea value={form.description} onChange={set('description')} rows={2} placeholder="Description (optional)" className="input-field resize-none" />
+          <div className="border-t border-t08 pt-3">
+            <p className="text-xs text-t40 mb-2 flex items-center gap-1"><Calendar size={11} /> Target date (optional)</p>
+            <div className="flex gap-2">
+              <input value={form.eventLabel} onChange={set('eventLabel')} placeholder="e.g. Finish by, Watch party" className="input-field flex-1 text-sm" maxLength={100} />
+              <input type="date" value={form.dueDate} onChange={set('dueDate')} className="input-field w-36 text-sm" min={new Date().toISOString().split('T')[0]} />
             </div>
           </div>
           <textarea value={form.description} onChange={set('description')} rows={2} placeholder="Description (optional)" className="input-field resize-none" />
@@ -853,6 +1106,7 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
   const [showAddItem, setShowAddItem] = useState(false)
   const [showRate, setShowRate] = useState(false)
   const [progress, setProgress] = useState(null)
+  const [showEventEditor, setShowEventEditor] = useState(false)
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -872,79 +1126,160 @@ function ClubDetail({ clubId, currentUser, onBack, pendingSubTab }) {
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
   const myProgress = progress ?? club?.currentItem?.myProgress ?? 0
-  const SUB_TABS = ['discussion', 'chat', 'members', 'past']
+  const SUB_TABS = [
+    { id: 'discussion', label: 'Discussion', Icon: MessageCircle },
+    { id: 'chat',       label: 'Chat',       Icon: MessageSquare },
+    { id: 'members',    label: 'Members',    Icon: Users },
+    { id: 'past',       label: 'Past',       Icon: Clock },
+  ]
 
   return (
     <div className="fade-up">
-      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-t50 hover:text-t80 mb-4 transition-colors">
-        <ArrowLeft size={15} /> All clubs
-      </button>
-
-      {/* Header */}
-      <div className="rounded-2xl p-4 mb-4 border border-t06" style={{ background: club?.bgColor || 'var(--surface)' }}>
-        <div className="flex items-start justify-between mb-3">
-          <div className="min-w-0">
-            <div className="text-2xl mb-1">{club?.emoji}</div>
-            <h2 className="font-display text-fs-2xl font-bold truncate" style={{ color: 'var(--text)' }}>{club?.name}</h2>
-            <p className="text-xs text-t40 mt-0.5">{club?.memberCount} members · {club?.type}</p>
-          </div>
-          {isAdmin && (
-            <button onClick={() => setShowAddItem(true)}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
-              style={{ background: `${accent}20`, color: accent }}>
-              <Plus size={12} /> Set item
-            </button>
-          )}
-        </div>
-
-        {club?.currentItem ? (
-          <div className="rounded-xl p-3 border border-t08" style={{ background: 'rgba(0,0,0,0.2)' }}>
-            <div className="flex items-start gap-3">
-              <CoverBlock coverUrl={club.currentItem.coverUrl} coverColor={club.currentItem.coverColor}
-                type={club.type} className="w-10 h-14 rounded-lg shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-t40 mb-0.5">Currently reading / watching</p>
-                <p className="font-semibold text-sm leading-snug" style={{ color: 'var(--text)' }}>{club.currentItem.title}</p>
-                <p className="text-xs text-t50">{club.currentItem.subtitle}</p>
-                <div className="mt-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-t40">My progress</span>
-                    <span className="text-xs font-medium" style={{ color: accent }}>{myProgress}%</span>
-                  </div>
-                  <input type="range" min={0} max={100} value={myProgress} onChange={e => updateProgress(Number(e.target.value))}
-                    className="w-full accent-current" style={{ accentColor: accent }} />
-                </div>
-                <button onClick={() => setShowRate(true)}
-                  className="mt-2 text-xs px-3 py-1.5 rounded-lg transition-colors"
-                  style={{ background: `${accent}20`, color: accent }}>
-                  Rate this item
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-xl p-3 text-center border border-t06" style={{ background: 'rgba(0,0,0,0.1)' }}>
-            <p className="text-sm text-t40">No current item set.</p>
-            {isAdmin && <button onClick={() => setShowAddItem(true)} className="text-xs mt-1" style={{ color: accent }}>Add one</button>}
-          </div>
+      {/* Back + club identity row */}
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-t50 hover:text-t80 transition-colors">
+          <ArrowLeft size={15} /> All clubs
+        </button>
+        {isAdmin && (
+          <button onClick={() => setShowAddItem(true)}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors"
+            style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
+            <Plus size={12} /> Set item
+          </button>
         )}
       </div>
 
+      {/* Club identity card */}
+      <div className="rounded-2xl p-4 mb-3 border border-t06" style={{ background: club?.bgColor || 'var(--surface)' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0"
+            style={{ background: 'var(--surface2)' }}>
+            {club?.emoji}
+          </div>
+          <div className="min-w-0">
+            <h2 className="font-display text-fs-xl font-bold leading-tight truncate" style={{ color: 'var(--text)' }}>
+              {club?.name}
+            </h2>
+            <p className="text-xs text-t40 mt-0.5 capitalize">{club?.memberCount} members · {club?.type}s</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Current item hero */}
+      {club?.currentItem ? (
+        <div className="rounded-2xl overflow-hidden mb-4 border border-t06" style={{ background: 'var(--surface)' }}>
+          {/* Gradient banner */}
+          <div className="h-20 relative" style={{ background: 'var(--gradient-warm)', opacity: 0.85 }} />
+
+          <div className="px-4 pb-4" style={{ marginTop: -32 }}>
+            <div className="flex items-end gap-4">
+              {/* Cover block — overlaps the banner */}
+              <div className="w-14 h-20 rounded-xl flex items-center justify-center shrink-0 border border-t08"
+                style={{ background: club.currentItem.coverColor || 'var(--surface2)', boxShadow: 'var(--shadow-md)' }}>
+                <TypeIcon type={club.type} size={20} />
+              </div>
+              <div className="flex-1 min-w-0 pt-9">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-t40 mb-0.5">Now {club.type === 'book' ? 'reading' : club.type === 'film' ? 'watching' : club.type === 'game' ? 'playing' : 'listening'}</p>
+                <p className="font-display font-semibold text-fs-md leading-tight truncate" style={{ color: 'var(--text)' }}>{club.currentItem.title}</p>
+                <p className="text-xs text-t50 truncate">{club.currentItem.subtitle}</p>
+              </div>
+            </div>
+
+            {/* Due date countdown */}
+            {club.currentItem.dueDate && (() => {
+              const days = daysUntil(club.currentItem.dueDate)
+              const label = club.currentItem.eventLabel || 'Due'
+              const urgent = days !== null && days <= 3
+              const overdue = days !== null && days < 0
+              return (
+                <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                  style={{ background: overdue ? '#ef444420' : urgent ? '#f9731620' : 'var(--accent-12)',
+                    color: overdue ? '#ef4444' : urgent ? '#f97316' : 'var(--accent)' }}>
+                  <Calendar size={10} />
+                  {overdue
+                    ? `${label} — ${Math.abs(days)}d overdue`
+                    : days === 0
+                      ? `${label} — today!`
+                      : `${label} — ${days}d left`}
+                </div>
+              )
+            })()}
+            {isAdmin && !showEventEditor && (
+              <button onClick={() => setShowEventEditor(true)}
+                className="mt-1 block text-xs text-t30 hover:text-t60 transition-colors">
+                {club.currentItem.dueDate ? 'Edit target date' : '+ Set target date'}
+              </button>
+            )}
+            {isAdmin && showEventEditor && (
+              <EventEditor
+                clubId={clubId}
+                initial={{ dueDate: club.currentItem.dueDate, eventLabel: club.currentItem.eventLabel }}
+                accent="var(--accent)"
+                onSaved={() => { setShowEventEditor(false); refetch() }}
+                onCancel={() => setShowEventEditor(false)}
+              />
+            )}
+
+            {/* Member avatar stack */}
+            {club.members?.length > 0 && (
+              <div className="flex items-center gap-2 mt-3">
+                <div className="flex -space-x-2">
+                  {club.members.slice(0, 5).map((m, i) => (
+                    <div key={i} style={{ zIndex: 5 - i }}>
+                      <Avatar user={m.user} size={22} />
+                    </div>
+                  ))}
+                </div>
+                <span className="text-xs text-t40">{club.memberCount} reading along</span>
+              </div>
+            )}
+
+            {/* Progress */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-t40">My progress</span>
+                <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>{myProgress}%</span>
+              </div>
+              <input type="range" min={0} max={100} value={myProgress} onChange={e => updateProgress(Number(e.target.value))}
+                className="w-full" style={{ accentColor: 'var(--accent)' }} />
+            </div>
+
+            <button onClick={() => setShowRate(true)}
+              className="mt-3 text-xs px-3 py-1.5 rounded-lg transition-colors"
+              style={{ background: 'var(--accent-12)', color: 'var(--accent)' }}>
+              Rate this item
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl p-4 mb-4 text-center border border-t06" style={{ background: 'var(--surface)' }}>
+          <p className="text-sm text-t40">No current item set.</p>
+          {isAdmin && (
+            <button onClick={() => setShowAddItem(true)} className="text-xs mt-1" style={{ color: 'var(--accent)' }}>
+              Add one
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Sub-tabs */}
-      <div className="flex gap-1 mb-4 p-1 rounded-xl" style={{ background: 'var(--surface)' }}>
-        {SUB_TABS.map(t => (
-          <button key={t} onClick={() => setSubTab(t)}
-            className="flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-all"
-            style={subTab === t ? { background: accent, color: 'var(--bg)' } : { color: 'var(--text-50)' }}>
-            {t}
+      <div className="flex gap-1 mb-4 p-1 rounded-xl border border-t06" style={{ background: 'var(--surface)' }}>
+        {SUB_TABS.map(({ id, label, Icon }) => (
+          <button key={id} onClick={() => setSubTab(id)}
+            className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-medium rounded-lg transition-all"
+            style={subTab === id
+              ? { background: 'var(--accent)', color: 'var(--accent-text)' }
+              : { color: 'var(--text-50)' }}>
+            <Icon size={11} />
+            {label}
           </button>
         ))}
       </div>
 
-      {subTab === 'discussion' && <DiscussionTab clubId={clubId} accent={accent} myUserId={currentUser?.id} />}
-      {subTab === 'chat' && <ChatTab clubId={clubId} currentUser={currentUser} accent={accent} />}
-      {subTab === 'members' && <MembersTab members={club?.members} currentItem={club?.currentItem} accent={accent} />}
-      {subTab === 'past' && <PastItemsTab items={club?.pastItems} accent={accent} />}
+      {subTab === 'discussion' && <DiscussionTab clubId={clubId} accent="var(--accent)" myUserId={currentUser?.id} />}
+      {subTab === 'chat' && <ChatTab clubId={clubId} currentUser={currentUser} accent="var(--accent)" />}
+      {subTab === 'members' && <MembersTab members={club?.members} currentItem={club?.currentItem} accent="var(--accent)" />}
+      {subTab === 'past' && <PastItemsTab items={club?.pastItems} accent="var(--accent)" />}
 
       {showAddItem && (
         <AddItemModal clubId={clubId} clubType={club?.type} onClose={() => setShowAddItem(false)} onAdded={() => { setShowAddItem(false); refetch() }} />
@@ -1345,6 +1680,10 @@ function Leaderboard() {
   const top3 = entries.slice(0, 3)
   const rest = entries.slice(3)
   const PERIODS = ['week', 'month', 'all']
+  const maxScore = entries[0]?.score || 1
+
+  // silver → bronze → gold so gold "crowns" last
+  const podiumDelays = [0, 300, 150]
 
   return (
     <div>
@@ -1362,16 +1701,24 @@ function Leaderboard() {
       {top3.length >= 3 && (
         <div className="flex items-end justify-center gap-3 mb-6">
           {[top3[1], top3[0], top3[2]].map((entry, i) => {
-            const heights = [80, 100, 68]
+            const heights = [80, 104, 64]
             const medals = ['🥈', '🥇', '🥉']
+            const isGold = i === 1
             return (
-              <div key={entry.id} className="flex flex-col items-center gap-2">
-                <Avatar user={entry} size={44} />
-                <p className="text-xs font-medium text-center" style={{ color: 'var(--text)' }}>{entry.displayName.split(' ')[0]}</p>
-                <div className="w-20 rounded-t-xl flex items-center justify-center relative transition-all duration-500"
-                  style={{ height: heights[i], background: `rgba(232,160,32,${i === 1 ? 0.2 : 0.08})`, border: `1px solid rgba(232,160,32,${i === 1 ? 0.3 : 0.12})` }}>
-                  <span className="text-2xl absolute -top-4">{medals[i]}</span>
-                  <span className="text-xs text-t60 mt-4">{entry.score}pts</span>
+              <div key={entry.id} className="flex flex-col items-center gap-2"
+                style={{ animation: `podiumRise 0.55s var(--ease-spring) ${podiumDelays[i]}ms both` }}>
+                <Avatar user={entry} size={isGold ? 52 : 42} />
+                <p className="text-xs font-semibold text-center text-t90 truncate max-w-[72px]">{entry.displayName.split(' ')[0]}</p>
+                <div className="w-20 rounded-t-xl flex flex-col items-center justify-center relative"
+                  style={{
+                    height: heights[i],
+                    background: isGold ? 'var(--accent-15)' : 'var(--surface-06)',
+                    border: `1px solid ${isGold ? 'var(--accent-25)' : 'var(--border-08)'}`,
+                    boxShadow: isGold ? '0 0 24px var(--accent-12)' : 'none',
+                  }}>
+                  <span className="text-xl absolute -top-3.5">{medals[i]}</span>
+                  <span className="text-sm font-bold mt-4" style={{ color: isGold ? 'var(--accent)' : 'var(--text-70)' }}>{entry.score}</span>
+                  <span className="text-[10px] text-t30">pts</span>
                 </div>
               </div>
             )
@@ -1379,24 +1726,42 @@ function Leaderboard() {
         </div>
       )}
 
-      {/* Rest of table */}
+      {/* Ranked table */}
       <div className="space-y-2">
-        {rest.map(entry => (
-          <div key={entry.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 border border-t06" style={{ background: 'var(--surface)' }}>
-            <span className="text-sm font-semibold w-6 text-center text-t40">#{entry.rank}</span>
-            <Avatar user={entry} size={32} />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-t90 truncate">{entry.displayName}</p>
-              <p className="text-xs text-t40">{entry.finished} items</p>
-            </div>
-            {entry.streak > 0 && (
-              <div className="flex items-center gap-1 text-xs text-[#E87070]">
-                <Flame size={12} fill="#E87070" /> {entry.streak}
+        {rest.map((entry, idx) => {
+          const pct = Math.max(4, Math.round((entry.score / maxScore) * 100))
+          return (
+            <div key={entry.id} className="relative overflow-hidden rounded-xl border border-t06"
+              style={{ background: 'var(--surface)', animation: `fadeUp var(--duration-base) var(--ease-out) ${idx * 35}ms both` }}>
+              <div className="flex items-center gap-3 px-3 py-2.5">
+                <span className="text-sm font-semibold w-6 text-center text-t40">#{entry.rank}</span>
+                <Avatar user={entry} size={32} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-t90 truncate">{entry.displayName}</p>
+                  <p className="text-xs text-t40">{entry.finished} items</p>
+                </div>
+                {entry.streak > 0 && (
+                  <div className="flex items-center gap-1 text-xs text-[#E87070]"
+                    style={{ animation: 'flameFlicker 1.2s ease-in-out infinite' }}>
+                    <Flame size={12} fill="#E87070" /> {entry.streak}
+                  </div>
+                )}
+                <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>{entry.score}</span>
               </div>
-            )}
-            <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>{entry.score}</span>
-          </div>
-        ))}
+              {/* Score bar */}
+              <div className="h-[3px]" style={{ background: 'var(--border-06)' }}>
+                <div className="h-full rounded-full"
+                  style={{
+                    width: `${pct}%`,
+                    background: 'var(--accent)',
+                    opacity: 0.45,
+                    transformOrigin: 'left',
+                    animation: `scoreBarFill 0.55s var(--ease-out) ${idx * 35 + 180}ms both`,
+                  }} />
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {myRank > 10 && (
@@ -1670,35 +2035,6 @@ function Analytics() {
   )
 }
 
-// ── Achievement Toast ──────────────────────────────────────────────────────
-
-function AchievementToast({ achievement, onDismiss }) {
-  useEffect(() => {
-    const timer = setTimeout(onDismiss, 4000)
-    return () => clearTimeout(timer)
-  }, [onDismiss])
-
-  return (
-    <div className="flex items-center gap-3 rounded-2xl px-4 py-3 border"
-      style={{
-        background: 'var(--surface)',
-        borderColor: 'var(--accent)',
-        boxShadow: 'var(--elevation-3)',
-        animation: 'fadeUp var(--duration-base) var(--ease-out) forwards',
-        minWidth: '220px',
-      }}>
-      <span style={{ fontSize: '1.5rem', lineHeight: 1 }}>{achievement.emoji}</span>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>Achievement Unlocked!</p>
-        <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{achievement.name}</p>
-      </div>
-      <button onClick={onDismiss} className="shrink-0" style={{ color: 'var(--text-30)' }}>
-        <X size={14} />
-      </button>
-    </div>
-  )
-}
-
 // ── Profile ───────────────────────────────────────────────────────────────
 
 const SOURCE_META = {
@@ -1712,34 +2048,15 @@ function Profile({ onLogout }) {
   const { user, updateUser } = useAuth()
   const { data: me, loading, error } = useApi(() => get('/users/me'))
   const { data: analytics, refetch: refetchAnalytics } = useApi(() => get('/analytics'))
-  const { data: achievementsData } = useApi(() => get('/achievements'))
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ displayName: '', bio: '' })
   const [saving, setSaving] = useState(false)
   const [showImport, setShowImport] = useState(false)
-  const [toastQueue, setToastQueue] = useState([])
-  const [activeToast, setActiveToast] = useState(null)
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (me) setForm({ displayName: me.displayName, bio: me.bio || '' })
   }, [me])
-
-  useEffect(() => {
-    if (!achievementsData) return
-    const newOnes = achievementsData.achievements.filter(a => a.isNew)
-    if (newOnes.length > 0) {
-      setToastQueue(newOnes)
-      post('/achievements/seen')
-    }
-  }, [achievementsData])
-
-  useEffect(() => {
-    if (activeToast || toastQueue.length === 0) return
-    const [next, ...rest] = toastQueue
-    setActiveToast(next)
-    setToastQueue(rest)
-  }, [toastQueue, activeToast])
 
   async function saveProfile(e) {
     e.preventDefault()
@@ -1826,35 +2143,6 @@ function Profile({ onLogout }) {
           ))}
         </div>
       </div>
-
-      {/* Achievements */}
-      {achievementsData?.achievements?.length > 0 && (
-        <div className="rounded-2xl border border-t06 overflow-hidden" style={{ background: 'var(--surface)' }}>
-          <div className="px-4 pt-4 pb-3">
-            <h3 className="text-fs-sm font-semibold text-t80">Achievements</h3>
-            <p className="text-fs-xs text-t40 mt-0.5">
-              {achievementsData.achievements.filter(a => a.earned).length} / {achievementsData.achievements.length} earned
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-2 px-4 pb-4">
-            {achievementsData.achievements.map(a => (
-              <div key={a.id}
-                className="flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all"
-                style={{
-                  background: a.earned ? 'var(--accent-12)' : 'var(--surface2)',
-                  borderColor: a.earned ? 'var(--accent-20)' : 'transparent',
-                  opacity: a.earned ? 1 : 0.45,
-                }}>
-                <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>{a.emoji}</span>
-                <div className="min-w-0">
-                  <p className="text-fs-xs font-semibold truncate" style={{ color: a.earned ? 'var(--text)' : 'var(--text-50)' }}>{a.name}</p>
-                  <p className="text-[10px] leading-tight mt-0.5 truncate" style={{ color: 'var(--text-40)' }}>{a.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Import history */}
       <div className="rounded-2xl border border-t06 overflow-hidden" style={{ background: 'var(--surface)' }}>
@@ -1944,13 +2232,6 @@ function Profile({ onLogout }) {
           onClose={() => setShowImport(false)}
           onImported={() => { refetchAnalytics() }}
         />
-      )}
-
-      {/* Achievement unlock toast */}
-      {activeToast && (
-        <div className="fixed bottom-24 lg:bottom-8 right-4 z-50">
-          <AchievementToast achievement={activeToast} onDismiss={() => setActiveToast(null)} />
-        </div>
       )}
     </div>
   )

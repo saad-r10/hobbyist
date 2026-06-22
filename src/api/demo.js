@@ -93,33 +93,33 @@ function initState() {
     progress: { 1: 72, 2: 100, 3: 85, 4: 65 },
     chatMessages: {
       1: [
-        { id: 1, text: 'Did everyone get to chapter 20?', time: '10:32 AM', user: SEED_USERS[1] },
-        { id: 2, text: 'Just finished it last night! No spoilers but… wow.', time: '10:45 AM', user: SEED_USERS[2] },
-        { id: 3, text: 'Still on chapter 18. One more day I promise 😅', time: '11:02 AM', user: SEED_USERS[0] },
-        { id: 4, text: 'The ending of chapter 17 absolutely wrecked me.', time: '11:15 AM', user: SEED_USERS[3] },
+        { id: 1, text: 'Did everyone get to chapter 20?', time: '10:32 AM', user: SEED_USERS[1], reactions: [{ emoji: '👍', count: 2, reactedByMe: false, users: ['Jordan Kim', 'Sam Rivera'] }] },
+        { id: 2, text: 'Just finished it last night! No spoilers but… wow.', time: '10:45 AM', user: SEED_USERS[2], reactions: [{ emoji: '😮', count: 3, reactedByMe: false, users: ['Maya Patel', 'Alex Chen', 'Priya Nair'] }] },
+        { id: 3, text: 'Still on chapter 18. One more day I promise 😅', time: '11:02 AM', user: SEED_USERS[0], reactions: [] },
+        { id: 4, text: 'The ending of chapter 17 absolutely wrecked me.', time: '11:15 AM', user: SEED_USERS[3], reactions: [{ emoji: '❤️', count: 4, reactedByMe: false, users: ['Maya Patel', 'Jordan Kim', 'Sam Rivera', 'Alex Chen'] }] },
       ],
       2: [
-        { id: 10, text: 'The final shot is going to stay with me for weeks.', time: '3:00 PM', user: SEED_USERS[2] },
-        { id: 11, text: 'Sandra Hüller deserves every award she got.', time: '3:20 PM', user: SEED_USERS[0] },
+        { id: 10, text: 'The final shot is going to stay with me for weeks.', time: '3:00 PM', user: SEED_USERS[2], reactions: [{ emoji: '🎉', count: 1, reactedByMe: false, users: ['Alex Chen'] }] },
+        { id: 11, text: 'Sandra Hüller deserves every award she got.', time: '3:20 PM', user: SEED_USERS[0], reactions: [] },
       ],
       3: [
-        { id: 20, text: 'The way John B. describes the mercury clocks is just... haunting.', time: '11:00 AM', user: SEED_USERS[1] },
-        { id: 21, text: 'First time listener. I went in blind and my jaw is on the floor.', time: '11:40 AM', user: SEED_USERS[0] },
+        { id: 20, text: 'The way John B. describes the mercury clocks is just... haunting.', time: '11:00 AM', user: SEED_USERS[1], reactions: [] },
+        { id: 21, text: 'First time listener. I went in blind and my jaw is on the floor.', time: '11:40 AM', user: SEED_USERS[0], reactions: [] },
       ],
       4: [
-        { id: 30, text: 'Hades II hit early access and it is ALREADY better than the original.', time: '9:00 AM', user: SEED_USERS[3] },
-        { id: 31, text: 'The new cast mechanic forces completely different builds.', time: '9:20 AM', user: SEED_USERS[0] },
+        { id: 30, text: 'Hades II hit early access and it is ALREADY better than the original.', time: '9:00 AM', user: SEED_USERS[3], reactions: [{ emoji: '😂', count: 1, reactedByMe: false, users: ['Sam Rivera'] }] },
+        { id: 31, text: 'The new cast mechanic forces completely different builds.', time: '9:20 AM', user: SEED_USERS[0], reactions: [] },
       ],
     },
     posts: {
       1: [
-        { id: 1, title: "The video game metaphors in ch.12 — intentional or incidental?", body: "I kept thinking about how Zevin uses the language of 'game over' to describe real endings.", time: '2 days ago', user: SEED_USERS[1], likeCount: 4, replyCount: 2, likedByMe: false, replies: [
-          { id: 1, text: "Definitely intentional. The whole book is built on the idea that we get to restart, revise, iterate.", time: '2 days ago', user: SEED_USERS[2] },
+        { id: 1, title: "The video game metaphors in ch.12 — intentional or incidental?", body: "I kept thinking about how Zevin uses the language of 'game over' to describe real endings.", time: '2 days ago', user: SEED_USERS[1], reactions: [{ emoji: '❤️', count: 3, reactedByMe: false, users: ['Maya Patel', 'Jordan Kim', 'Sam Rivera'] }, { emoji: '🎉', count: 1, reactedByMe: false, users: ['Alex Chen'] }], replyCount: 2, replies: [
+          { id: 1, text: "Definitely intentional. The whole book is built on the idea that we get to restart, revise, iterate.", time: '2 days ago', user: SEED_USERS[2], reactions: [] },
         ]},
-        { id: 2, title: "Sadie vs Sam — who do you relate to more?", body: "I'm firmly Team Sadie.", time: '4 days ago', user: SEED_USERS[3], likeCount: 7, replyCount: 1, likedByMe: false, replies: [] },
+        { id: 2, title: "Sadie vs Sam — who do you relate to more?", body: "I'm firmly Team Sadie.", time: '4 days ago', user: SEED_USERS[3], reactions: [{ emoji: '👍', count: 5, reactedByMe: false, users: ['Maya Patel', 'Jordan Kim', 'Sam Rivera', 'Alex Chen', 'Priya Nair'] }], replyCount: 1, replies: [] },
       ],
       2: [
-        { id: 3, title: "The courtroom scenes and objective truth", body: "Triet builds the entire film around the impossibility of ever knowing what really happened.", time: '3 days ago', user: SEED_USERS[2], likeCount: 5, replyCount: 1, likedByMe: false, replies: [] },
+        { id: 3, title: "The courtroom scenes and objective truth", body: "Triet builds the entire film around the impossibility of ever knowing what really happened.", time: '3 days ago', user: SEED_USERS[2], reactions: [{ emoji: '😮', count: 2, reactedByMe: false, users: ['Jordan Kim', 'Sam Rivera'] }], replyCount: 1, replies: [] },
       ],
       3: [], 4: [],
     },
@@ -396,7 +396,14 @@ export function matchDemoHandler(method, path, body) {
   // Posts list
   const postsList = path.match(/^\/posts\/club\/(\d+)$/)
   if (postsList && method === 'GET') {
-    return async () => { await delay(); return _state.posts[Number(postsList[1])] || [] }
+    return async () => {
+      await delay()
+      return (_state.posts[Number(postsList[1])] || []).map(p => ({
+        ...p,
+        reactions: (p.reactions || []).map(r => ({ ...r })),
+        replies: (p.replies || []).map(r => ({ ...r, reactions: (r.reactions || []).map(rx => ({ ...rx })) })),
+      }))
+    }
   }
 
   // New post
@@ -405,7 +412,7 @@ export function matchDemoHandler(method, path, body) {
       const clubId = Number(postsList[1])
       const p = {
         id: ++_state.nextId, title: body.title, body: body.body, time: 'just now',
-        user: _state.user, likeCount: 0, replyCount: 0, likedByMe: false, replies: [],
+        user: _state.user, reactions: [], replyCount: 0, replies: [],
       }
       if (!_state.posts[clubId]) _state.posts[clubId] = []
       _state.posts[clubId].unshift(p)
@@ -414,18 +421,92 @@ export function matchDemoHandler(method, path, body) {
     }
   }
 
-  // Like toggle
-  const like = path.match(/^\/posts\/(\d+)\/like$/)
-  if (like) {
+  // Reaction toggle (post)
+  const react = path.match(/^\/posts\/(\d+)\/react$/)
+  if (react) {
     return async () => {
-      const postId = Number(like[1])
+      const targetId = Number(react[1])
+      const emoji = body.emoji
+      for (const posts of Object.values(_state.posts)) {
+        const p = posts.find(p => p.id === targetId)
+        if (p) {
+          if (!p.reactions) p.reactions = []
+          const ex = p.reactions.find(r => r.emoji === emoji)
+          if (ex && ex.reactedByMe) {
+            ex.count = Math.max(0, ex.count - 1)
+            ex.reactedByMe = false
+            p.reactions = p.reactions.filter(r => r.count > 0)
+            persist()
+            return { reacted: false, emoji }
+          } else if (ex) {
+            ex.count++; ex.reactedByMe = true
+          } else {
+            p.reactions.push({ emoji, count: 1, reactedByMe: true, users: [_state.user?.displayName || 'You'] })
+          }
+        }
+      }
+      persist()
+      return { reacted: true, emoji }
+    }
+  }
+
+  // Reaction toggle (reply)
+  const reactReply = path.match(/^\/posts\/(\d+)\/replies\/(\d+)\/react$/)
+  if (reactReply) {
+    return async () => {
+      const postId = Number(reactReply[1])
+      const replyId = Number(reactReply[2])
+      const emoji = body.emoji
       for (const posts of Object.values(_state.posts)) {
         const p = posts.find(p => p.id === postId)
-        if (p) { p.likedByMe = !p.likedByMe; p.likeCount += p.likedByMe ? 1 : -1 }
+        const r = p?.replies.find(r => r.id === replyId)
+        if (r) {
+          if (!r.reactions) r.reactions = []
+          const ex = r.reactions.find(rx => rx.emoji === emoji)
+          if (ex && ex.reactedByMe) {
+            ex.count = Math.max(0, ex.count - 1)
+            ex.reactedByMe = false
+            r.reactions = r.reactions.filter(rx => rx.count > 0)
+            persist()
+            return { reacted: false, emoji }
+          } else if (ex) {
+            ex.count++; ex.reactedByMe = true
+          } else {
+            r.reactions.push({ emoji, count: 1, reactedByMe: true, users: [_state.user?.displayName || 'You'] })
+          }
+        }
       }
-      const found = Object.values(_state.posts).flat().find(p => p.id === postId)
       persist()
-      return { liked: found?.likedByMe ?? false }
+      return { reacted: true, emoji }
+    }
+  }
+
+  // Reaction toggle (chat)
+  const reactChat = path.match(/^\/chat\/messages\/(\d+)\/react$/)
+  if (reactChat) {
+    return async () => {
+      const msgId = Number(reactChat[1])
+      const emoji = body.emoji
+      for (const msgs of Object.values(_state.chatMessages || {})) {
+        const m = msgs.find(m => m.id === msgId)
+        if (m) {
+          if (!m.reactions) m.reactions = []
+          const ex = m.reactions.find(r => r.emoji === emoji)
+          if (ex && ex.reactedByMe) {
+            ex.count = Math.max(0, ex.count - 1)
+            ex.reactedByMe = false
+            m.reactions = m.reactions.filter(r => r.count > 0)
+            persist()
+            return { reacted: false, emoji }
+          } else if (ex) {
+            ex.count++; ex.reactedByMe = true
+          } else {
+            m.reactions.push({ emoji, count: 1, reactedByMe: true, users: [_state.user?.displayName || 'You'] })
+          }
+        }
+      }
+      persist()
+      return { reacted: true, emoji }
     }
   }
 
@@ -434,7 +515,7 @@ export function matchDemoHandler(method, path, body) {
   if (reply) {
     return async () => {
       const postId = Number(reply[1])
-      const r = { id: ++_state.nextId, text: body.text, time: 'just now', user: _state.user }
+      const r = { id: ++_state.nextId, text: body.text, time: 'just now', user: _state.user, reactions: [] }
       for (const posts of Object.values(_state.posts)) {
         const p = posts.find(p => p.id === postId)
         if (p) { p.replies.push(r); p.replyCount++ }
@@ -447,7 +528,13 @@ export function matchDemoHandler(method, path, body) {
   // Chat fetch
   const chat = path.match(/^\/chat\/(\d+)$/)
   if (chat && method === 'GET') {
-    return async () => { await delay(); return _state.chatMessages[Number(chat[1])] || [] }
+    return async () => {
+      await delay()
+      return (_state.chatMessages[Number(chat[1])] || []).map(m => ({
+        ...m,
+        reactions: (m.reactions || []).map(r => ({ ...r })),
+      }))
+    }
   }
 
   // Chat send
