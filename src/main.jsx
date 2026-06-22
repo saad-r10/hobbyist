@@ -9,6 +9,7 @@ import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Onboarding from './pages/Onboarding.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
+import PublicClub from './pages/PublicClub.jsx'
 
 // GitHub Pages can't handle BrowserRouter paths — use HashRouter for demo build
 const Router = import.meta.env.VITE_DEMO_MODE === 'true' ? HashRouter : BrowserRouter
@@ -52,6 +53,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
           <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/clubs/:id" element={<PublicClub />} />
           <Route path="/onboarding" element={
             <RequireAuth>
               <Onboarding />

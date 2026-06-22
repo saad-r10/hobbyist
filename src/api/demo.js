@@ -343,6 +343,27 @@ export const DEMO_HANDLERS = {
 // ── Dynamic path handlers ────────────────────────────────────────────────
 
 export function matchDemoHandler(method, path, body) {
+  // Public club preview (no auth)
+  const publicClub = path.match(/^\/clubs\/public\/(\d+)$/)
+  if (publicClub && method === 'GET') {
+    return async () => {
+      await delay()
+      const id = Number(publicClub[1])
+      const club = _state.clubs.find(c => c.id === id && c.isPublic)
+      if (!club) return null
+      return {
+        id: club.id, name: club.name, description: club.description,
+        type: club.type, emoji: club.emoji, accentColor: club.accentColor,
+        bgColor: club.bgColor, memberCount: club.memberCount,
+        currentItem: club.currentItem ? {
+          title: club.currentItem.title, subtitle: club.currentItem.subtitle,
+          coverUrl: club.currentItem.coverUrl ?? null,
+          coverColor: club.currentItem.coverColor, type: club.currentItem.type,
+        } : null,
+      }
+    }
+  }
+
   // Club detail
   const clubDetail = path.match(/^\/clubs\/(\d+)$/)
   if (clubDetail && method === 'GET') {

@@ -82,6 +82,37 @@ router.get('/explore', requireAuth, asyncHandler(async (req, res) => {
   res.json(formatted)
 }))
 
+// GET /api/clubs/public/:id — unauthenticated preview (public clubs only)
+router.get('/public/:id', asyncHandler(async (req, res) => {
+  const clubId = Number(req.params.id)
+  const club = await prisma.club.findUnique({ where: { id: clubId } })
+
+  if (!club || !club.isPublic) return res.status(404).json({ error: 'Club not found' })
+
+  const [currentItem, memberCount] = await Promise.all([
+    prisma.clubItem.findFirst({ where: { clubId, status: 'current' } }),
+    prisma.clubMember.count({ where: { clubId } }),
+  ])
+
+  res.json({
+    id: club.id,
+    name: club.name,
+    description: club.description,
+    type: club.type,
+    emoji: club.emoji,
+    accentColor: club.accentColor,
+    bgColor: club.bgColor,
+    memberCount,
+    currentItem: currentItem ? {
+      title: currentItem.title,
+      subtitle: currentItem.subtitle,
+      coverUrl: currentItem.coverUrl ?? null,
+      coverColor: currentItem.coverColor,
+      type: currentItem.type,
+    } : null,
+  })
+}))
+
 // GET /api/clubs/:id — single club with full detail
 router.get('/:id', requireAuth, asyncHandler(async (req, res) => {
   const clubId = Number(req.params.id)
