@@ -21,9 +21,9 @@ export default defineConfig([
       'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
-  // Server files run in Node.js — needs process, __dirname, etc.
+  // Server files and root config files run in Node.js — needs process, __dirname, etc.
   {
-    files: ['server/**/*.js'],
+    files: ['server/**/*.js', '*.config.{js,ts}'],
     languageOptions: {
       globals: { ...globals.node },
     },
