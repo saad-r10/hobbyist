@@ -43,22 +43,57 @@ app.use(cors({
 app.use(express.json({ limit: '1mb' }))
 app.use(cookieParser())
 
+const isTest = process.env.NODE_ENV === 'test'
+
+function makeHandler(label) {
+  return (req, res, _next, options) => {
+    if (!isTest) {
+      console.warn(`[rate-limit] ${label} hit — ${req.method} ${req.path} from ${req.ip}`)
+    }
+    res
+      .status(options.statusCode)
+      .set('Retry-After', Math.ceil(options.windowMs / 1000))
+      .json({ error: 'Too many requests. Please slow down and try again later.' })
+  }
+}
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'test' ? 10000 : 20,
+  max: isTest ? 10000 : 20,
   standardHeaders: true,
   legacyHeaders: false,
+  handler: makeHandler('auth'),
 })
 
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: process.env.NODE_ENV === 'test' ? 10000 : 200,
+  max: isTest ? 10000 : 200,
   standardHeaders: true,
   legacyHeaders: false,
+  handler: makeHandler('global'),
 })
+
+// Stricter limit for write-heavy endpoints (clubs, posts, chat mutations)
+const mutateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isTest ? 10000 : 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: makeHandler('mutation'),
+})
+
+function applyMutateLimiter(req, res, next) {
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+    return mutateLimiter(req, res, next)
+  }
+  next()
+}
 
 app.use('/api/auth', authLimiter)
 app.use('/api', apiLimiter)
+app.use('/api/clubs', applyMutateLimiter)
+app.use('/api/posts', applyMutateLimiter)
+app.use('/api/chat', applyMutateLimiter)
 
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
