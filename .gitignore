@@ -35,3 +35,7 @@ server/prisma/prisma/
 .env
 .env.*
 !.env.example
+
+# Local debug/verification screenshots
+*.png
+.playwright-mcp/
